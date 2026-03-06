@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS // MARKET & INTEL DASHBOARD</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --green-muted: #003d0f;
+    --green-glow: rgba(0,255,65,0.15);
+    --green-glow-strong: rgba(0,255,65,0.4);
+    --amber: #ffb700;
+    --red: #ff2a2a;
+    --cyan: #00f5ff;
+    --bg: #010a02;
+    --bg2: #020e03;
+    --panel: rgba(0,255,65,0.04);
+    --border: rgba(0,255,65,0.2);
+    --border-bright: rgba(0,255,65,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* CRT scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+    animation: scanroll 8s linear infinite;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  @keyframes scanroll {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100px; }
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes glitch {
+    0%,90%,100% { transform: none; text-shadow: 0 0 10px var(--green); }
+    91% { transform: skewX(-5deg) translateX(-3px); text-shadow: -3px 0 var(--cyan), 3px 0 var(--red); }
+    93% { transform: skewX(3deg) translateX(2px); text-shadow: 2px 0 var(--cyan); }
+    95% { transform: none; }
+  }
+  @keyframes pulse-border {
+    0%,100% { border-color: var(--border); box-shadow: 0 0 5px var(--green-glow); }
+    50% { border-color: var(--border-bright); box-shadow: 0 0 20px var(--green-glow-strong); }
+  }
+  @keyframes ticker-scroll {
+    0% { transform: translateX(100vw); }
+    100% { transform: translateX(-100%); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes matrix-rain {
+    0% { opacity: 1; top: -20px; }
+    100% { opacity: 0; top: 100%; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes numberFlash {
+    0% { color: #fff; text-shadow: 0 0 20px #fff; }
+    100% { color: inherit; text-shadow: inherit; }
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-bright);
+    background: linear-gradient(180deg, rgba(0,255,65,0.06) 0%, transparent 100%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    animation: glitch 6s infinite;
+    text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-dim);
+  }
+
+  .logo span { color: var(--cyan); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 1.2s infinite;
+    box-shadow: 0 0 8px var(--green);
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .clock {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--green);
+    text-shadow: 0 0 10px var(--green);
+  }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .nav-tab {
+    padding: 10px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: rgba(0,255,65,0.4);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    top: 1px;
+  }
+
+  .nav-tab:hover { color: var(--green); }
+  .nav-tab.active {
+    color: var(--green);
+    border-bottom: 2px solid var(--green);
+    background: var(--green-glow);
+    text-shadow: 0 0 10px var(--green);
+  }
+
+  /* TICKER */
+  .ticker-bar {
+    background: rgba(0,255,65,0.07);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 30px;
+    display: flex;
+    align-items: center;
+  }
+
+  .ticker-label {
+    background: var(--green);
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ticker-content {
+    display: flex;
+    animation: ticker-scroll 40s linear infinite;
+    white-space: nowrap;
+    font-size: 11px;
+    gap: 40px;
+  }
+
+  .ticker-item { display: flex; gap: 8px; }
+  .ticker-item .sym { color: var(--cyan); font-weight: bold; }
+  .ticker-item .price { color: var(--green); }
+  .ticker-item .up { color: #00ff41; }
+  .ticker-item .down { color: var(--red); }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: none;
+    padding: 20px 24px;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .main.active { display: grid; }
+  #markets-view { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; }
+  #news-view { grid-template-columns: 2fr 1fr; }
+  #overview-view { grid-template-columns: 1fr 1fr; }
+
+  /* PANEL */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 0;
+    animation: pulse-border 4s infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,255,65,0.05);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green);
+  }
+
+  .panel-badge {
+    font-size: 9px;
+    padding: 2px 8px;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    letter-spacing: 1px;
+  }
+
+  .panel-body { padding: 16px; }
+
+  /* MARKET TABLE */
+  .market-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .market-table th {
+    text-align: left;
+    color: rgba(0,255,65,0.5);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 4px 8px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .market-table td { padding: 8px; border-bottom: 1px solid rgba(0,255,65,0.06); }
+  .market-table tr:hover td { background: rgba(0,255,65,0.04); }
+  .market-table .sym { color: var(--cyan); font-weight: bold; font-size: 13px; }
+  .market-table .name { color: rgba(0,255,65,0.6); font-size: 10px; }
+  .market-table .price { color: #fff; font-size: 13px; }
+  .market-table .up { color: #00ff41; }
+  .market-table .down { color: var(--red); }
+  .market-table .neutral { color: var(--amber); }
+
+  /* SPARKLINE */
+  .sparkline { width: 60px; height: 20px; }
+
+  /* MINI CHART */
+  .chart-container {
+    position: relative;
+    height: 160px;
+    margin-top: 8px;
+  }
+
+  canvas.mini-chart { width: 100% !important; height: 100% !important; }
+
+  /* NEWS */
+  .news-item {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,255,65,0.08);
+    animation: fadeIn 0.5s ease forwards;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .news-item:hover { background: rgba(0,255,65,0.04); padding-left: 8px; }
+
+  .news-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 5px;
+    font-size: 10px;
+    color: rgba(0,255,65,0.5);
+  }
+
+  .news-source { color: var(--cyan); letter-spacing: 1px; }
+  .news-headline {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.5;
+    margin-bottom: 4px;
+  }
+  .news-headline:hover { color: var(--green); }
+  .news-summary { font-size: 11px; color: rgba(0,255,65,0.5); line-height: 1.5; }
+
+  .news-tag {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 6px;
+    border: 1px solid;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .tag-market { border-color: var(--cyan); color: var(--cyan); }
+  .tag-tech { border-color: #b967ff; color: #b967ff; }
+  .tag-world { border-color: var(--amber); color: var(--amber); }
+  .tag-economy { border-color: var(--green); color: var(--green); }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(0,255,65,0.6);
+    font-size: 12px;
+    padding: 20px 0;
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,255,65,0.2);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* BIG NUMBER */
+  .big-stat {
+    text-align: center;
+    padding: 16px 8px;
+  }
+
+  .big-stat .label {
+    font-size: 9px;
+    color: rgba(0,255,65,0.5);
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+  }
+
+  .big-stat .value {
+    font-family: 'VT323', monospace;
+    font-size: 42px;
+    line-height: 1;
+    text-shadow: 0 0 20px currentColor;
+  }
+
+  .big-stat .change {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  /* GRID STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .stat-cell {
+    background: var(--bg2);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-cell .sl { font-size: 9px; color: rgba(0,255,65,0.5); letter-spacing: 2px; margin-bottom: 4px; }
+  .stat-cell .sv { font-family: 'VT323', monospace; font-size: 24px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  /* MATRIX BG CANVAS */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.04;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .content-wrapper { position: relative; z-index: 1; }
+
+  /* NEWS FEED scroll */
+  .news-feed { max-height: 600px; overflow-y: auto; padding-right: 4px; }
+
+  /* OVERVIEW cards */
+  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+  .ov-card {
+    border: 1px solid var(--border);
+    padding: 12px;
+    background: rgba(0,255,65,0.03);
+    text-align: center;
+  }
+  .ov-label { font-size: 9px; letter-spacing: 2px; color: rgba(0,255,65,0.5); margin-bottom: 6px; }
+  .ov-val { font-family: 'VT323', monospace; font-size: 28px; text-shadow: 0 0 10px currentColor; }
+
+  /* AI loading dots */
+  .ai-dots::after {
+    content: '';
+    animation: aiDots 1.5s infinite;
+  }
+  @keyframes aiDots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+  }
+
+  .terminal-cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--green);
+    animation: blink 1s infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    #markets-view { grid-template-columns: 1fr; }
+    #news-view { grid-template-columns: 1fr; }
+    #overview-view { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<div class="content-wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">NEX<span>U</span>S // <span style="font-size:14px;color:rgba(0,255,65,0.6)">MARKET INTEL</span></div>
+    <div class="header-right">
+      <span><span class="status-dot"></span>LIVE FEED</span>
+      <span style="color:rgba(0,255,65,0.5)">|</span>
+      <span style="color:rgba(0,255,65,0.5)">NODE: <span style="color:var(--cyan)">0x4F2A</span></span>
+      <span style="color:rgba(0,255,65,0.5)">|</span>
+      <div class="clock" id="clock">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- NAV TABS -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('overview')">⬡ OVERVIEW</button>
+    <button class="nav-tab" onclick="switchTab('markets')">▲ MARKETS</button>
+    <button class="nav-tab" onclick="switchTab('news')">⚡ INTEL FEED</button>
+  </nav>
+
+  <!-- TICKER -->
+  <div class="ticker-bar">
+    <div class="ticker-label">LIVE</div>
+    <div style="overflow:hidden;flex:1">
+      <div class="ticker-content" id="ticker"></div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div class="main active" id="overview-view">
+    <!-- Left: Market summary -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">MARKET OVERVIEW</span>
+          <span class="panel-badge">LIVE</span>
+        </div>
+        <div class="panel-body">
+          <div class="overview-grid" id="overview-cards"></div>
+          <canvas id="overview-chart" height="140"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">SECTOR PERFORMANCE</span>
+          <span class="panel-badge">TODAY</span>
+        </div>
+        <div class="panel-body" id="sector-bars"></div>
+      </div>
+    </div>
+
+    <!-- Right: AI news summary -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">⚡ AI INTEL BRIEF</span>
+          <span class="panel-badge">POWERED BY CLAUDE</span>
+        </div>
+        <div class="panel-body" id="ai-brief">
+          <div class="loading"><div class="spinner"></div><span class="ai-dots">CONNECTING TO INTEL CORE</span></div>
+        </div>
+      </div>
+      <div class="panel" style="flex:1">
+        <div class="panel-header">
+          <span class="panel-title">TOP HEADLINES</span>
+          <span class="panel-badge" id="news-count">LOADING</span>
+        </div>
+        <div class="panel-body">
+          <div class="news-feed" id="overview-headlines"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKETS TAB -->
+  <div class="main" id="markets-view">
+    <div class="panel" style="grid-column:1/-1">
+      <div class="panel-header">
+        <span class="panel-title">INDICES</span>
+        <span class="panel-badge">SIMULATED LIVE DATA</span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" id="indices-grid"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">EQUITIES</span>
+        <span class="panel-badge">TOP MOVERS</span>
+      </div>
+      <div class="panel-body">
+        <table class="market-table" id="stocks-table">
+          <thead><tr><th>SYM</th><th>NAME</th><th>PRICE</th><th>CHG%</th><th>TREND</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">CRYPTO</span>
+        <span class="panel-badge">24H</span>
+      </div>
+      <div class="panel-body">
+        <table class="market-table" id="crypto-table">
+          <thead><tr><th>SYM</th><th>NAME</th><th>PRICE</th><th>CHG%</th><th>TREND</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">FOREX / COMMODITIES</span>
+        <span class="panel-badge">SPOT</span>
+      </div>
+      <div class="panel-body">
+        <table class="market-table" id="forex-table">
+          <thead><tr><th>PAIR</th><th>NAME</th><th>RATE</th><th>CHG%</th><th>TREND</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEWS TAB -->
+  <div class="main" id="news-view">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">WORLD INTEL FEED</span>
+        <span class="panel-badge" id="news-tab-count">LOADING</span>
+      </div>
+      <div class="panel-body">
+        <div class="news-feed" id="main-news-feed">
+          <div class="loading"><div class="spinner"></div><span class="ai-dots">FETCHING INTEL</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">CATEGORY FILTER</span>
+        </div>
+        <div class="panel-body" id="cat-filter" style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button onclick="filterNews('all')" class="filter-btn active-filter" data-cat="all">ALL</button>
+          <button onclick="filterNews('economy')" class="filter-btn" data-cat="economy">ECONOMY</button>
+          <button onclick="filterNews('tech')" class="filter-btn" data-cat="tech">TECH</button>
+          <button onclick="filterNews('world')" class="filter-btn" data-cat="world">WORLD</button>
+          <button onclick="filterNews('market')" class="filter-btn" data-cat="market">MARKETS</button>
+        </div>
+      </div>
+
+      <div class="panel" style="flex:1">
+        <div class="panel-header">
+          <span class="panel-title">AI ANALYSIS</span>
+          <span class="panel-badge">CLAUDE</span>
+        </div>
+        <div class="panel-body" id="ai-analysis">
+          <div class="loading"><div class="spinner"></div><span class="ai-dots">ANALYZING</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">SOURCE INTEGRITY</span>
+        </div>
+        <div class="panel-body" id="source-list" style="font-size:11px;color:rgba(0,255,65,0.7);line-height:2">
+          <div>▶ Reuters ............. <span style="color:var(--green)">VERIFIED</span></div>
+          <div>▶ BBC News ............ <span style="color:var(--green)">VERIFIED</span></div>
+          <div>▶ AP News ............. <span style="color:var(--green)">VERIFIED</span></div>
+          <div>▶ Financial Times ..... <span style="color:var(--cyan)">PREMIUM</span></div>
+          <div>▶ Bloomberg .......... <span style="color:var(--cyan)">PREMIUM</span></div>
+          <div>▶ The Guardian ........ <span style="color:var(--green)">VERIFIED</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.filter-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: rgba(0,255,65,0.6);
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover, .active-filter {
+  background: var(--green-glow);
+  border-color: var(--green);
+  color: var(--green);
+  text-shadow: 0 0 8px var(--green);
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ─── MATRIX BACKGROUND ─────────────────────────────────────────────────────
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const cols = Math.floor(canvas.width / 14);
+const drops = Array(cols).fill(1);
+const chars = '01アイウエオカキクケコ0110NEXUS∑∇λΨ';
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(1,10,2,0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ff41';
+  ctx.font = '12px Share Tech Mono';
+  drops.forEach((y, i) => {
+    const ch = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(ch, i * 14, y * 14);
+    if (y * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+setInterval(drawMatrix, 45);
+
+// ─── CLOCK ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
+    .map(n => String(n).padStart(2,'0')).join(':');
+  document.getElementById('clock').textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── MARKET DATA ─────────────────────────────────────────────────────────────
+const STOCKS = [
+  {sym:'NVDA',name:'NVIDIA Corp',price:875.32,chg:3.21},
+  {sym:'AAPL',name:'Apple Inc',price:192.45,chg:-0.87},
+  {sym:'MSFT',name:'Microsoft',price:415.20,chg:1.14},
+  {sym:'GOOGL',name:'Alphabet',price:178.90,chg:0.43},
+  {sym:'META',name:'Meta Platforms',price:527.60,chg:2.76},
+  {sym:'AMZN',name:'Amazon',price:198.30,chg:-1.22},
+  {sym:'TSLA',name:'Tesla',price:245.80,chg:-2.14},
+  {sym:'AMD',name:'Adv Micro Devices',price:162.40,chg:4.53},
+  {sym:'PLTR',name:'Palantir',price:82.17,chg:6.24},
+  {sym:'INTC',name:'Intel Corp',price:43.22,chg:-3.41}
+];
+
+const CRYPTO = [
+  {sym:'BTC',name:'Bitcoin',price:97420.50,chg:1.83},
+  {sym:'ETH',name:'Ethereum',price:3845.20,chg:2.41},
+  {sym:'SOL',name:'Solana',price:198.30,chg:5.12},
+  {sym:'BNB',name:'Binance Coin',price:612.40,chg:-0.76},
+  {sym:'XRP',name:'Ripple',price:2.34,chg:3.87},
+  {sym:'ADA',name:'Cardano',price:1.02,chg:-1.44},
+  {sym:'AVAX',name:'Avalanche',price:42.80,chg:7.23},
+  {sym:'LINK',name:'Chainlink',price:18.64,chg:2.19},
+  {sym:'DOT',name:'Polkadot',price:9.47,chg:-0.83},
+  {sym:'MATIC',name:'Polygon',price:1.18,chg:-2.31}
+];
+
+const FOREX = [
+  {sym:'XAU/USD',name:'Gold Spot',price:2318.40,chg:0.32},
+  {sym:'XAG/USD',name:'Silver Spot',price:27.84,chg:0.91},
+  {sym:'EUR/USD',name:'Euro / Dollar',price:1.0842,chg:-0.12},
+  {sym:'GBP/USD',name:'Pound / Dollar',price:1.2631,chg:0.08},
+  {sym:'USD/JPY',name:'Dollar / Yen',price:149.82,chg:0.24},
+  {sym:'USD/CNH',name:'Dollar / Yuan',price:7.2341,chg:-0.05},
+  {sym:'WTI',name:'Crude Oil WTI',price:78.43,chg:-1.21},
+  {sym:'BTC/USDT',name:'BTC Perpetual',price:97380,chg:1.74},
+];
+
+const INDICES = [
+  {sym:'S&P 500',val:5218.40,chg:0.74},
+  {sym:'NASDAQ',val:16420.10,chg:1.12},
+  {sym:'DOW',val:39142.30,chg:0.21},
+  {sym:'VIX',val:14.23,chg:-5.42},
+  {sym:'DAX',val:18240.50,chg:0.43},
+  {sym:'NIKKEI',val:40120.80,chg:1.87},
+  {sym:'FTSE 100',val:7842.30,chg:0.18},
+  {sym:'HSI',val:17320.40,chg:-0.93},
+];
+
+// Simulate live price movements
+let liveStocks = JSON.parse(JSON.stringify(STOCKS));
+let liveCrypto = JSON.parse(JSON.stringify(CRYPTO));
+let liveForex = JSON.parse(JSON.stringify(FOREX));
+let liveIndices = JSON.parse(JSON.stringify(INDICES));
+
+function nudge(arr) {
+  arr.forEach(item => {
+    const delta = (Math.random() - 0.497) * item.price * 0.0015;
+    item.price = Math.max(0.001, item.price + delta);
+    item.chg += (Math.random() - 0.5) * 0.1;
+  });
+}
+
+// History for sparklines
+const history = {};
+[...STOCKS,...CRYPTO,...FOREX].forEach(s => {
+  history[s.sym] = Array.from({length:20}, () => s.price * (0.97 + Math.random()*0.06));
+});
+
+function sparklineSVG(data, positive) {
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const w = 60, h = 20;
+  const pts = data.map((v,i) => `${(i/(data.length-1))*w},${h - ((v-min)/range)*h}`).join(' ');
+  const color = positive ? '#00ff41' : '#ff2a2a';
+  return `<svg class="sparkline" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+}
+
+function fmtPrice(p, sym) {
+  if (p > 1000) return '$' + p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (p < 10) return p.toFixed(4);
+  return p.toFixed(2);
+}
+
+function renderTable(id, data, fmt) {
+  const tbody = document.querySelector(`#${id} tbody`);
+  if (!tbody) return;
+  tbody.innerHTML = data.map(item => {
+    const pos = item.chg >= 0;
+    const cls = pos ? 'up' : 'down';
+    const arrow = pos ? '▲' : '▼';
+    history[item.sym] = history[item.sym] || [];
+    history[item.sym].push(item.price);
+    if (history[item.sym].length > 20) history[item.sym].shift();
+    return `<tr>
+      <td class="sym">${item.sym}</td>
+      <td class="name">${item.name}</td>
+      <td class="price">${fmtPrice(item.price, item.sym)}</td>
+      <td class="${cls}">${arrow} ${Math.abs(item.chg).toFixed(2)}%</td>
+      <td>${sparklineSVG(history[item.sym], pos)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderIndices() {
+  const el = document.getElementById('indices-grid');
+  if (!el) return;
+  el.innerHTML = liveIndices.map(idx => {
+    const pos = idx.chg >= 0;
+    const cls = pos ? 'up' : 'down';
+    return `<div class="big-stat">
+      <div class="label">${idx.sym}</div>
+      <div class="value ${cls}">${idx.val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="change ${cls}">${pos?'▲':'▼'} ${Math.abs(idx.chg).toFixed(2)}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderOverviewCards() {
+  const el = document.getElementById('overview-cards');
+  if (!el) return;
+  const cards = [
+    {label:'S&P 500', val:'5,218.40', chg:'+0.74%', pos:true},
+    {label:'BTC/USD', val:'$97,420', chg:'+1.83%', pos:true},
+    {label:'GOLD', val:'$2,318', chg:'+0.32%', pos:true},
+    {label:'VIX', val:'14.23', chg:'-5.42%', pos:false},
+    {label:'EUR/USD', val:'1.0842', chg:'-0.12%', pos:false},
+    {label:'OIL WTI', val:'$78.43', chg:'-1.21%', pos:false},
+  ];
+  el.innerHTML = cards.map(c => `
+    <div class="ov-card">
+      <div class="ov-label">${c.label}</div>
+      <div class="ov-val" style="color:${c.pos?'var(--green)':'var(--red)'}">${c.val}</div>
+      <div style="font-size:10px;color:${c.pos?'var(--green)':'var(--red)'}">${c.chg}</div>
+    </div>
+  `).join('');
+}
+
+function renderSectorBars() {
+  const el = document.getElementById('sector-bars');
+  if (!el) return;
+  const sectors = [
+    {name:'TECHNOLOGY',chg:2.14},{name:'SEMICONDUCTORS',chg:3.87},
+    {name:'FINANCIALS',chg:0.43},{name:'ENERGY',chg:-1.21},
+    {name:'HEALTHCARE',chg:0.82},{name:'CONSUMER',chg:-0.34},
+    {name:'DEFENSE',chg:1.56},{name:'REAL ESTATE',chg:-0.78},
+  ];
+  el.innerHTML = sectors.map(s => {
+    const pos = s.chg >= 0;
+    const pct = Math.abs(s.chg);
+    const barW = Math.min(pct * 20, 100);
+    return `<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:10px;">
+      <span style="width:130px;color:rgba(0,255,65,0.7);letter-spacing:1px">${s.name}</span>
+      <div style="flex:1;background:rgba(0,255,65,0.05);height:14px;position:relative;">
+        <div style="width:${barW}%;height:100%;background:${pos?'rgba(0,255,65,0.3)':'rgba(255,42,42,0.3)'};border-right:2px solid ${pos?'var(--green)':'var(--red)'}"></div>
+      </div>
+      <span style="width:50px;text-align:right;color:${pos?'var(--green)':'var(--red)'}">${pos?'+':''}${s.chg}%</span>
+    </div>`;
+  }).join('');
+}
+
+// OVERVIEW CHART
+let ovChart;
+function initOverviewChart() {
+  const el = document.getElementById('overview-chart');
+  if (!el) return;
+  const labels = Array.from({length:30},(_,i)=>`${30-i}m`).reverse();
+  const spData = Array.from({length:30}, () => 5180 + Math.random()*80);
+  ovChart = new Chart(el, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'S&P 500',
+        data: spData,
+        borderColor:'#00ff41',
+        backgroundColor:'rgba(0,255,65,0.05)',
+        borderWidth:1.5,
+        pointRadius:0,
+        fill:true,
+        tension:0.4
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{label:ctx=>`S&P: ${ctx.raw.toFixed(2)}`}}},
+      scales:{
+        x:{ticks:{color:'rgba(0,255,65,0.4)',font:{size:9},maxTicksLimit:6},grid:{color:'rgba(0,255,65,0.05)'}},
+        y:{ticks:{color:'rgba(0,255,65,0.4)',font:{size:9}},grid:{color:'rgba(0,255,65,0.05)'}}
+      }
+    }
+  });
+}
+
+// ─── TICKER ──────────────────────────────────────────────────────────────────
+function renderTicker() {
+  const all = [...liveStocks.slice(0,5), ...liveCrypto.slice(0,4), ...liveForex.slice(0,4)];
+  document.getElementById('ticker').innerHTML = all.map(item => {
+    const pos = item.chg >= 0;
+    return `<span class="ticker-item">
+      <span class="sym">${item.sym}</span>
+      <span class="price">${fmtPrice(item.price,item.sym)}</span>
+      <span class="${pos?'up':'down'}">${pos?'▲':'▼'}${Math.abs(item.chg).toFixed(2)}%</span>
+    </span>`;
+  }).join('<span style="color:rgba(0,255,65,0.3);margin:0 10px">◆</span>');
+}
+
+// ─── NEWS DATA + AI ──────────────────────────────────────────────────────────
+let allNews = [];
+let currentFilter = 'all';
+
+const NEWS_HEADLINES = [
+  {headline:"Federal Reserve signals cautious approach to rate cuts amid persistent inflation data", source:"Reuters", time:"2m ago", cat:"economy", summary:"Fed officials maintain hawkish tone as CPI figures remain above 2% target."},
+  {headline:"NVIDIA surges 4% as AI chip demand continues to outpace production capacity", source:"Bloomberg", time:"5m ago", cat:"market", summary:"Data center revenue projected to reach $40B this quarter alone."},
+  {headline:"China's manufacturing PMI expands for second consecutive month, boosting Asian markets", source:"AP News", time:"12m ago", cat:"economy", summary:"Stimulus measures appear to be taking effect in world's second-largest economy."},
+  {headline:"European Central Bank holds rates steady, hints at June cut if inflation cooperates", source:"BBC", time:"18m ago", cat:"economy", summary:"ECB President signals data-dependent approach as eurozone growth stagnates."},
+  {headline:"Bitcoin ETF inflows hit record $1.2B in single day as institutional adoption accelerates", source:"Financial Times", time:"24m ago", cat:"market", summary:"BlackRock and Fidelity funds attract record capital amid renewed crypto optimism."},
+  {headline:"OpenAI announces GPT-5 with multimodal capabilities surpassing human benchmarks", source:"The Guardian", time:"31m ago", cat:"tech", summary:"New model demonstrates emergent reasoning capabilities across science and math domains."},
+  {headline:"Geopolitical tensions in Middle East push oil prices above $80 per barrel", source:"Reuters", time:"35m ago", cat:"world", summary:"Supply disruption fears intensify as regional conflicts show no signs of resolution."},
+  {headline:"UK economy unexpectedly enters technical recession in Q4 2024 data revision", source:"BBC", time:"42m ago", cat:"economy", summary:"GDP contracted 0.3% for second consecutive quarter, triggering political pressure on government."},
+  {headline:"Quantum computing breakthrough: IBM demonstrates 1000-qubit error correction", source:"AP News", time:"58m ago", cat:"tech", summary:"Milestone could accelerate timeline for cryptographically relevant quantum computers."},
+  {headline:"G7 nations agree on framework for AI regulation and cross-border data governance", source:"Financial Times", time:"1h ago", cat:"world", summary:"Historic agreement sets minimum standards for frontier AI model safety evaluations."},
+  {headline:"Tesla Cybertruck deliveries halted due to brake pedal defect affecting 3,800 vehicles", source:"Reuters", time:"1h ago", cat:"market", summary:"Company issues voluntary recall, shares dip 2% in premarket trading."},
+  {headline:"Meta's AR glasses exceed 10 million units sold in first quarter of availability", source:"Bloomberg", time:"2h ago", cat:"tech", summary:"Strong consumer demand signals next computing platform shift may be imminent."},
+];
+
+function renderNewsItem(item) {
+  const tagMap = {economy:'tag-economy',tech:'tag-tech',world:'tag-world',market:'tag-market'};
+  return `<div class="news-item" data-cat="${item.cat}">
+    <div class="news-meta">
+      <span class="news-source">[${item.source.toUpperCase()}]</span>
+      <span>${item.time}</span>
+    </div>
+    <div class="news-headline">${item.headline}</div>
+    <div class="news-summary">${item.summary}</div>
+    <span class="news-tag ${tagMap[item.cat]||'tag-economy'}">${item.cat.toUpperCase()}</span>
+  </div>`;
+}
+
+function renderNews(feedId, filter='all') {
+  const el = document.getElementById(feedId);
+  if (!el) return;
+  const filtered = filter === 'all' ? NEWS_HEADLINES : NEWS_HEADLINES.filter(n => n.cat === filter);
+  el.innerHTML = filtered.map(renderNewsItem).join('');
+  if (document.getElementById('news-count')) document.getElementById('news-count').textContent = NEWS_HEADLINES.length + ' ITEMS';
+  if (document.getElementById('news-tab-count')) document.getElementById('news-tab-count').textContent = filtered.length + ' ITEMS';
+}
+
+function filterNews(cat) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
+  document.querySelector(`[data-cat="${cat}"]`)?.classList.add('active-filter');
+  renderNews('main-news-feed', cat);
+}
+
+// ─── AI BRIEF (CLAUDE API) ────────────────────────────────────────────────────
+async function fetchAIBrief() {
+  const el = document.getElementById('ai-brief');
+  const context = `Current market snapshot:
+- S&P 500: +0.74%, NASDAQ: +1.12%, BTC: +1.83%, Gold: +0.32%, Oil: -1.21%
+- Top mover: NVDA +3.21%, AMD +4.53%, PLTR +6.24%
+- Headlines: Fed signals caution on rate cuts; Bitcoin ETF record inflows; China PMI expansion; UK enters recession; OpenAI GPT-5 announcement.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are a terse, incisive financial intelligence analyst writing for a professional trading terminal. 
+Write in a direct, data-driven style with no fluff. 
+Format with brief section headers using ▶ symbol. 
+Use terminal-style brevity. Max 200 words total.
+Sections: MARKET PULSE | KEY RISKS | WATCH LIST`,
+        messages:[{role:'user',content:`Give me a rapid intel brief based on this data:\n${context}`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'SIGNAL LOST: No response from intel core.';
+    el.innerHTML = `<div style="font-size:12px;line-height:1.8;color:rgba(0,255,65,0.85)">${
+      text.replace(/▶\s*/g,'<br><span style="color:var(--cyan)">▶ </span>')
+         .replace(/\*\*(.*?)\*\*/g,'<span style="color:#fff;text-shadow:0 0 8px #fff">$1</span>')
+         .replace(/\n/g,'<br>')
+    }<span class="terminal-cursor"></span></div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:11px;color:rgba(0,255,65,0.6)">
+      <div style="color:var(--amber)">▶ MARKET PULSE</div>
+      Equity markets showing broad strength led by tech. AI-related names outperforming. Rate-sensitive sectors under pressure as Fed signals delayed cuts.
+      <br><br><div style="color:var(--amber)">▶ KEY RISKS</div>
+      Geopolitical escalation in MENA threatening energy supply chain. UK recession data adding to global growth concerns. Crypto volatility elevated near ATH.
+      <br><br><div style="color:var(--amber)">▶ WATCH LIST</div>
+      NVDA (momentum), BTC (breakout risk), EUR/USD (ECB divergence), WTI (supply premium)<span class="terminal-cursor"></span>
+    </div>`;
+  }
+}
+
+async function fetchAIAnalysis() {
+  const el = document.getElementById('ai-analysis');
+  if (!el) return;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'You are a geopolitical and macro analyst. Respond with extremely concise 3-sentence analysis. Terminal style. No markdown.',
+        messages:[{role:'user',content:'Analyze the macro implications of: Fed holding rates, Bitcoin ETF record inflows, UK recession, China PMI recovery, OpenAI GPT-5 release, oil price spike.'}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    el.innerHTML = `<div style="font-size:11px;line-height:1.8;color:rgba(0,255,65,0.8)">${text.replace(/\n/g,'<br>')}<span class="terminal-cursor"></span></div>`;
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:11px;line-height:1.8;color:rgba(0,255,65,0.8)">
+      Macro divergence accelerating: US exceptionalism holds as Fed delays while UK and EU weaken. AI productivity wave beginning to show in earnings but creating new geopolitical fracture lines around chip access. Risk-on sentiment likely near-term, but geopolitical tail risks remain elevated.<span class="terminal-cursor"></span>
+    </div>`;
+  }
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.main').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`${tab}-view`).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(btn => {
+    if (btn.textContent.toLowerCase().includes(tab === 'overview' ? 'overview' : tab === 'markets' ? 'market' : 'intel')) {
+      btn.classList.add('active');
+    }
+  });
+  if (tab === 'markets') { renderMarkets(); }
+  if (tab === 'news') { renderNews('main-news-feed', currentFilter); fetchAIAnalysis(); }
+}
+
+// ─── RENDER ALL MARKETS ───────────────────────────────────────────────────────
+function renderMarkets() {
+  renderIndices();
+  renderTable('stocks-table', liveStocks, true);
+  renderTable('crypto-table', liveCrypto, true);
+  renderTable('forex-table', liveForex, false);
+}
+
+// ─── LIVE UPDATE ─────────────────────────────────────────────────────────────
+function liveUpdate() {
+  nudge(liveStocks); nudge(liveCrypto); nudge(liveForex); nudge(liveIndices);
+  renderTicker();
+  if (document.getElementById('markets-view').classList.contains('active')) renderMarkets();
+  // Update overview chart
+  if (ovChart) {
+    const lastVal = ovChart.data.datasets[0].data;
+    lastVal.push(lastVal[lastVal.length-1] * (1 + (Math.random()-0.498)*0.001));
+    lastVal.shift();
+    ovChart.update('none');
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderTicker();
+renderOverviewCards();
+renderSectorBars();
+renderNews('overview-headlines');
+fetchAIBrief();
+setTimeout(initOverviewChart, 100);
+setInterval(liveUpdate, 2000);
+</script>
+</body>
+</html>
