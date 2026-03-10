@@ -3,1078 +3,2241 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS // MARKET & INTEL DASHBOARD</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<title>StockSensei — Complete Market Education</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --green: #00ff41;
-    --green-dim: #00cc33;
-    --green-muted: #003d0f;
-    --green-glow: rgba(0,255,65,0.15);
-    --green-glow-strong: rgba(0,255,65,0.4);
-    --amber: #ffb700;
-    --red: #ff2a2a;
-    --cyan: #00f5ff;
-    --bg: #010a02;
-    --bg2: #020e03;
-    --panel: rgba(0,255,65,0.04);
-    --border: rgba(0,255,65,0.2);
-    --border-bright: rgba(0,255,65,0.5);
-  }
+:root {
+  --bg: #0d0d0f;
+  --surface: #141416;
+  --surface2: #1c1c20;
+  --surface3: #232328;
+  --border: #2e2e35;
+  --border2: #3a3a44;
+  --text: #e8e8ee;
+  --text2: #a0a0b8;
+  --muted: #5a5a72;
+  --b-accent: #f5c842;
+  --b-glow: rgba(245,200,66,0.15);
+  --i-accent: #3ecfb2;
+  --i-glow: rgba(62,207,178,0.15);
+  --danger: #e05060;
+  --success: #3ecfb2;
+  --gold: #f5c842;
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  body {
-    background: var(--bg);
-    color: var(--green);
-    font-family: 'Share Tech Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-    cursor: crosshair;
-  }
+html { scroll-behavior: smooth; }
 
-  /* CRT scanline overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.15) 2px,
-      rgba(0,0,0,0.15) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-    animation: scanroll 8s linear infinite;
-  }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* Vignette */
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
-    pointer-events: none;
-    z-index: 9998;
-  }
+/* subtle dot grid */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: radial-gradient(circle, #2a2a35 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
 
-  @keyframes scanroll {
-    0% { background-position: 0 0; }
-    100% { background-position: 0 100px; }
-  }
+/* ─── SIDEBAR ─── */
+#sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  transition: transform 0.3s ease;
+}
 
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-  @keyframes glitch {
-    0%,90%,100% { transform: none; text-shadow: 0 0 10px var(--green); }
-    91% { transform: skewX(-5deg) translateX(-3px); text-shadow: -3px 0 var(--cyan), 3px 0 var(--red); }
-    93% { transform: skewX(3deg) translateX(2px); text-shadow: 2px 0 var(--cyan); }
-    95% { transform: none; }
-  }
-  @keyframes pulse-border {
-    0%,100% { border-color: var(--border); box-shadow: 0 0 5px var(--green-glow); }
-    50% { border-color: var(--border-bright); box-shadow: 0 0 20px var(--green-glow-strong); }
-  }
-  @keyframes ticker-scroll {
-    0% { transform: translateX(100vw); }
-    100% { transform: translateX(-100%); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes matrix-rain {
-    0% { opacity: 1; top: -20px; }
-    100% { opacity: 0; top: 100%; }
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes numberFlash {
-    0% { color: #fff; text-shadow: 0 0 20px #fff; }
-    100% { color: inherit; text-shadow: inherit; }
-  }
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
 
-  /* HEADER */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border-bright);
-    background: linear-gradient(180deg, rgba(0,255,65,0.06) 0%, transparent 100%);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    backdrop-filter: blur(4px);
-  }
+.logo-mark {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .logo {
-    font-family: 'Orbitron', monospace;
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: 4px;
-    animation: glitch 6s infinite;
-    text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-dim);
-  }
+.logo-diamond {
+  width: 10px; height: 10px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
 
-  .logo span { color: var(--cyan); }
+.logo-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 11px;
-    letter-spacing: 1px;
-  }
+/* Overall progress bar in sidebar */
+.sidebar-progress {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
 
-  .status-dot {
-    width: 8px; height: 8px;
-    background: var(--green);
-    border-radius: 50%;
-    animation: blink 1.2s infinite;
-    box-shadow: 0 0 8px var(--green);
-    display: inline-block;
-    margin-right: 6px;
-  }
+.sp-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
 
-  .clock {
-    font-family: 'VT323', monospace;
-    font-size: 20px;
-    color: var(--green);
-    text-shadow: 0 0 10px var(--green);
-  }
+.sp-bar {
+  height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
 
-  /* NAV TABS */
-  .nav-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    background: rgba(0,0,0,0.3);
-  }
+.sp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--b-accent), var(--i-accent));
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
 
-  .nav-tab {
-    padding: 10px 24px;
-    font-family: 'Orbitron', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: rgba(0,255,65,0.4);
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    position: relative;
-    top: 1px;
-  }
+/* Sidebar nav */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
 
-  .nav-tab:hover { color: var(--green); }
-  .nav-tab.active {
-    color: var(--green);
-    border-bottom: 2px solid var(--green);
-    background: var(--green-glow);
-    text-shadow: 0 0 10px var(--green);
-  }
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  /* TICKER */
-  .ticker-bar {
-    background: rgba(0,255,65,0.07);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    height: 30px;
-    display: flex;
-    align-items: center;
-  }
+.season-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  padding: 10px 20px 6px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .ticker-label {
-    background: var(--green);
-    color: #000;
-    font-family: 'Orbitron', monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    padding: 0 10px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
+.season-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
-  .ticker-content {
-    display: flex;
-    animation: ticker-scroll 40s linear infinite;
-    white-space: nowrap;
-    font-size: 11px;
-    gap: 40px;
-  }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  font-size: 13px;
+  color: var(--text2);
+}
 
-  .ticker-item { display: flex; gap: 8px; }
-  .ticker-item .sym { color: var(--cyan); font-weight: bold; }
-  .ticker-item .price { color: var(--green); }
-  .ticker-item .up { color: #00ff41; }
-  .ticker-item .down { color: var(--red); }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--surface2); color: var(--text); border-left-color: var(--gold); }
+.nav-item.locked { opacity: 0.35; cursor: not-allowed; }
+.nav-item.done .nav-dot { background: var(--success) !important; }
 
-  /* MAIN LAYOUT */
-  .main {
-    display: none;
-    padding: 20px 24px;
-    gap: 20px;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
+.nav-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
 
-  .main.active { display: grid; }
-  #markets-view { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; }
-  #news-view { grid-template-columns: 2fr 1fr; }
-  #overview-view { grid-template-columns: 1fr 1fr; }
+.nav-item.active .nav-dot { background: var(--gold); }
+.nav-item.unlocked .nav-dot { background: var(--border2); }
 
-  /* PANEL */
-  .panel {
-    border: 1px solid var(--border);
-    background: var(--panel);
-    padding: 0;
-    animation: pulse-border 4s infinite;
-    position: relative;
-    overflow: hidden;
-  }
+.nav-title {
+  flex: 1;
+  line-height: 1.3;
+  font-weight: 500;
+  font-size: 12px;
+}
 
-  .panel::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--green), transparent);
-  }
+.nav-check {
+  font-size: 10px;
+  color: var(--success);
+}
 
-  .panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(0,255,65,0.05);
-  }
+/* Sidebar bottom tools */
+.sidebar-tools {
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
 
-  .panel-title {
-    font-family: 'Orbitron', monospace;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--green);
-    text-shadow: 0 0 8px var(--green);
-  }
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  width: 100%;
+  text-align: left;
+}
 
-  .panel-badge {
-    font-size: 9px;
-    padding: 2px 8px;
-    border: 1px solid var(--green-dim);
-    color: var(--green-dim);
-    letter-spacing: 1px;
-  }
+.tool-btn:hover { background: var(--surface2); color: var(--text); }
+.tool-btn.active { background: var(--surface2); color: var(--text); border-left-color: var(--i-accent); }
 
-  .panel-body { padding: 16px; }
+.tool-icon { font-size: 15px; width: 18px; text-align: center; }
 
-  /* MARKET TABLE */
-  .market-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .market-table th {
-    text-align: left;
-    color: rgba(0,255,65,0.5);
-    font-size: 9px;
-    letter-spacing: 2px;
-    padding: 4px 8px 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .market-table td { padding: 8px; border-bottom: 1px solid rgba(0,255,65,0.06); }
-  .market-table tr:hover td { background: rgba(0,255,65,0.04); }
-  .market-table .sym { color: var(--cyan); font-weight: bold; font-size: 13px; }
-  .market-table .name { color: rgba(0,255,65,0.6); font-size: 10px; }
-  .market-table .price { color: #fff; font-size: 13px; }
-  .market-table .up { color: #00ff41; }
-  .market-table .down { color: var(--red); }
-  .market-table .neutral { color: var(--amber); }
+/* ─── MAIN ─── */
+#main {
+  margin-left: 260px;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
 
-  /* SPARKLINE */
-  .sparkline { width: 60px; height: 20px; }
+/* Mobile toggle */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 300;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 40px; height: 40px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+}
 
-  /* MINI CHART */
-  .chart-container {
-    position: relative;
-    height: 160px;
-    margin-top: 8px;
-  }
+/* ─── HOME / DASHBOARD ─── */
+#page-home {
+  padding: 48px 48px 80px;
+  max-width: 900px;
+}
 
-  canvas.mini-chart { width: 100% !important; height: 100% !important; }
+.home-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
 
-  /* NEWS */
-  .news-item {
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(0,255,65,0.08);
-    animation: fadeIn 0.5s ease forwards;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
+.home-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
 
-  .news-item:hover { background: rgba(0,255,65,0.04); padding-left: 8px; }
+.home-title .accent-b { color: var(--b-accent); }
+.home-title .accent-i { color: var(--i-accent); }
 
-  .news-meta {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 5px;
-    font-size: 10px;
-    color: rgba(0,255,65,0.5);
-  }
+.home-desc {
+  font-size: 16px;
+  color: var(--text2);
+  line-height: 1.8;
+  max-width: 560px;
+  margin-bottom: 40px;
+}
 
-  .news-source { color: var(--cyan); letter-spacing: 1px; }
-  .news-headline {
-    font-size: 13px;
-    color: rgba(255,255,255,0.85);
-    line-height: 1.5;
-    margin-bottom: 4px;
-  }
-  .news-headline:hover { color: var(--green); }
-  .news-summary { font-size: 11px; color: rgba(0,255,65,0.5); line-height: 1.5; }
+.home-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
 
-  .news-tag {
-    display: inline-block;
-    font-size: 8px;
-    padding: 1px 6px;
-    border: 1px solid;
-    letter-spacing: 1px;
-    margin-top: 4px;
-  }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 140px;
+}
 
-  .tag-market { border-color: var(--cyan); color: var(--cyan); }
-  .tag-tech { border-color: #b967ff; color: #b967ff; }
-  .tag-world { border-color: var(--amber); color: var(--amber); }
-  .tag-economy { border-color: var(--green); color: var(--green); }
+.stat-num {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
 
-  /* LOADING */
-  .loading {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: rgba(0,255,65,0.6);
-    font-size: 12px;
-    padding: 20px 0;
-  }
+.stat-num.gold { color: var(--b-accent); }
+.stat-num.teal { color: var(--i-accent); }
 
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(0,255,65,0.2);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
+.stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
 
-  /* BIG NUMBER */
-  .big-stat {
-    text-align: center;
-    padding: 16px 8px;
-  }
+.season-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
 
-  .big-stat .label {
-    font-size: 9px;
-    color: rgba(0,255,65,0.5);
-    letter-spacing: 3px;
-    margin-bottom: 6px;
-  }
+@media(max-width: 600px) { .season-cards { grid-template-columns: 1fr; } }
 
-  .big-stat .value {
-    font-family: 'VT323', monospace;
-    font-size: 42px;
-    line-height: 1;
-    text-shadow: 0 0 20px currentColor;
-  }
+.season-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
 
-  .big-stat .change {
-    font-size: 11px;
-    margin-top: 4px;
-  }
+.season-card::before {
+  content:'';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
 
-  /* GRID STATS */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--border);
-  }
+.season-card.beginner::before { background: linear-gradient(90deg, var(--b-accent), #e8a020); }
+.season-card.intermediate::before { background: linear-gradient(90deg, var(--i-accent), #2080c0); }
 
-  .stat-cell {
-    background: var(--bg2);
-    padding: 12px;
-    text-align: center;
-  }
+.season-card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
 
-  .stat-cell .sl { font-size: 9px; color: rgba(0,255,65,0.5); letter-spacing: 2px; margin-bottom: 4px; }
-  .stat-cell .sv { font-family: 'VT323', monospace; font-size: 24px; }
+.sc-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+.sc-tag.b { color: var(--b-accent); }
+.sc-tag.i { color: var(--i-accent); }
 
-  /* MATRIX BG CANVAS */
-  #matrix-canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    opacity: 0.04;
-    z-index: 0;
-    pointer-events: none;
-  }
+.sc-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
 
-  .content-wrapper { position: relative; z-index: 1; }
+.sc-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
 
-  /* NEWS FEED scroll */
-  .news-feed { max-height: 600px; overflow-y: auto; padding-right: 4px; }
+.sc-progress {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
 
-  /* OVERVIEW cards */
-  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
-  .ov-card {
-    border: 1px solid var(--border);
-    padding: 12px;
-    background: rgba(0,255,65,0.03);
-    text-align: center;
-  }
-  .ov-label { font-size: 9px; letter-spacing: 2px; color: rgba(0,255,65,0.5); margin-bottom: 6px; }
-  .ov-val { font-family: 'VT323', monospace; font-size: 28px; text-shadow: 0 0 10px currentColor; }
+.sc-progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.season-card.beginner .sc-progress-fill { background: var(--b-accent); }
+.season-card.intermediate .sc-progress-fill { background: var(--i-accent); }
 
-  /* AI loading dots */
-  .ai-dots::after {
-    content: '';
-    animation: aiDots 1.5s infinite;
-  }
-  @keyframes aiDots {
-    0% { content: '.'; }
-    33% { content: '..'; }
-    66% { content: '...'; }
-  }
+.sc-progress-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
 
-  .terminal-cursor {
-    display: inline-block;
-    width: 8px; height: 14px;
-    background: var(--green);
-    animation: blink 1s infinite;
-    vertical-align: middle;
-    margin-left: 2px;
-  }
+/* ─── CHAPTER LIST PAGE ─── */
+#page-chapters {
+  padding: 48px 48px 80px;
+  max-width: 800px;
+  display: none;
+}
 
-  /* Responsive */
-  @media (max-width: 900px) {
-    #markets-view { grid-template-columns: 1fr; }
-    #news-view { grid-template-columns: 1fr; }
-    #overview-view { grid-template-columns: 1fr; }
-  }
+.page-header {
+  margin-bottom: 36px;
+}
+
+.page-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.page-eyebrow.b { color: var(--b-accent); }
+.page-eyebrow.i { color: var(--i-accent); }
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+.page-sub {
+  font-size: 15px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+.chapter-list { display: flex; flex-direction: column; gap: 8px; }
+
+.ch-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ch-row:not(.locked):hover { border-color: var(--border2); background: var(--surface2); transform: translateX(4px); }
+.ch-row.locked { opacity: 0.4; cursor: not-allowed; }
+
+.ch-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 24px;
+}
+
+.ch-info { flex: 1; }
+
+.ch-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  color: var(--text);
+}
+
+.ch-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.ch-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.ch-badge.done { background: rgba(62,207,178,0.12); color: var(--success); }
+.ch-badge.go { background: rgba(245,200,66,0.12); color: var(--gold); }
+.ch-badge.lock { background: var(--surface3); color: var(--muted); }
+
+/* ─── LESSON PAGE ─── */
+#page-lesson {
+  padding: 40px 48px 80px;
+  display: none;
+}
+
+.lesson-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.back-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.back-btn:hover { border-color: var(--border2); color: var(--text); }
+
+.lesson-crumb {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.lesson-layout {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  gap: 32px;
+  align-items: start;
+}
+
+@media(max-width:900px) { .lesson-layout { grid-template-columns: 1fr; } }
+
+/* Lesson main */
+.lesson-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+
+.lesson-tag.b { color: var(--b-accent); }
+.lesson-tag.i { color: var(--i-accent); }
+
+.lesson-h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(26px,4vw,44px);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Lesson body content */
+.lesson-content {
+  font-size: 16px;
+  line-height: 1.85;
+  color: var(--text2);
+}
+
+.lesson-content h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 36px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-content h3:first-child { margin-top: 0; }
+.lesson-content p { margin-bottom: 16px; }
+.lesson-content strong { color: var(--text); font-weight: 700; }
+
+.callout {
+  background: var(--surface2);
+  border-left: 3px solid var(--b-accent);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 15px;
+  color: var(--text);
+  font-style: italic;
+}
+
+.callout.green { border-color: var(--i-accent); }
+.callout.red { border-color: var(--danger); }
+.callout.blue { border-color: #5080e0; }
+
+.term-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+@media(max-width:600px) { .term-grid { grid-template-columns: 1fr; } }
+
+.term-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.term-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--b-accent);
+  margin-bottom: 6px;
+}
+
+.term-def { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+.analogy-box {
+  background: linear-gradient(135deg, rgba(245,200,66,0.05), rgba(62,207,178,0.04));
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin: 20px 0;
+}
+
+.analogy-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--b-accent);
+  margin-bottom: 10px;
+}
+
+.pullquote {
+  border-left: 3px solid var(--b-accent);
+  padding: 14px 20px;
+  margin: 24px 0;
+  font-style: italic;
+  font-size: 17px;
+  color: var(--text);
+  background: var(--surface2);
+  border-radius: 0 8px 8px 0;
+}
+
+.pullquote.green { border-color: var(--i-accent); }
+.pullquote.blue { border-color: #5080e0; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 13px;
+}
+
+.data-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  background: var(--surface3);
+  color: var(--text2);
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.data-table tr:nth-child(even) td { background: var(--surface2); }
+
+.formula-box {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--b-accent);
+  line-height: 2;
+}
+
+.highlight-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  border-radius: 0 0 8px 8px;
+  padding: 18px 20px;
+  margin: 18px 0;
+}
+
+.hl-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.warn-box {
+  background: rgba(224,80,96,0.08);
+  border: 1px solid rgba(224,80,96,0.25);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 14px;
+  color: #e09090;
+}
+
+/* Lesson sidebar */
+.lesson-sidebar { position: sticky; top: 24px; }
+
+.sidebar-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.widget-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hw-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.hw-check {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--border2);
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  margin-top: 1px;
+  transition: all 0.2s;
+  color: var(--bg);
+}
+
+.hw-check.checked { background: var(--success); border-color: var(--success); }
+.hw-text { font-size: 12px; color: var(--text2); line-height: 1.55; font-family: 'DM Mono', monospace; }
+
+/* Quiz widget */
+.quiz-widget {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.quiz-w-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--b-accent);
+  margin-bottom: 12px;
+}
+
+.quiz-w-q {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.quiz-w-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quiz-w-opt:hover { border-color: var(--border2); color: var(--text); background: var(--surface3); }
+.quiz-w-opt.correct { border-color: var(--success); background: rgba(62,207,178,0.1); color: var(--success); }
+.quiz-w-opt.wrong { border-color: var(--danger); background: rgba(224,80,96,0.08); color: #e09090; }
+
+.quiz-w-fb {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  line-height: 1.6;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  display: none;
+}
+
+.quiz-w-fb.show { display: block; }
+.quiz-w-fb.ok { background: rgba(62,207,178,0.1); color: var(--success); }
+.quiz-w-fb.no { background: rgba(224,80,96,0.08); color: #e09090; }
+
+.done-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--b-accent);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.done-btn:hover { background: #ffd050; }
+.done-btn:disabled { background: var(--success); color: rgba(0,0,0,0.7); cursor: default; }
+
+.celebrate-line {
+  text-align: center;
+  padding: 12px;
+  font-size: 20px;
+  display: none;
+  animation: popIn 0.4s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+
+/* ─── NEWS LAB ─── */
+#page-news {
+  padding: 48px 48px 80px;
+  max-width: 860px;
+  display: none;
+}
+
+.news-intro {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 36px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.news-big-icon { font-size: 52px; line-height: 1; }
+
+.news-title {
+  font-family: 'Fraunces', serif;
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.news-title span { color: var(--i-accent); }
+
+.news-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+  letter-spacing: 0.5px;
+}
+
+.news-input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.input-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: block;
+}
+
+#newsInput {
+  width: 100%;
+  min-height: 110px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  line-height: 1.65;
+  transition: border-color 0.2s;
+}
+
+#newsInput:focus { border-color: var(--border2); }
+#newsInput::placeholder { color: var(--muted); }
+
+.examples-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.example-chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.example-chip:hover { background: var(--surface3); border-color: var(--i-accent); color: var(--i-accent); }
+
+.analyze-btn {
+  margin-top: 16px;
+  padding: 13px 28px;
+  background: var(--i-accent);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analyze-btn:hover { background: #60efd0; }
+.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.loading-wrap {
+  text-align: center;
+  padding: 56px;
+  display: none;
+}
+
+.loading-wrap.show { display: block; }
+
+.spinner {
+  display: inline-block;
+  width: 28px; height: 28px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--i-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-bottom: 14px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* Analysis result */
+.analysis-out {
+  display: none;
+  animation: fadeUp 0.35s ease;
+}
+
+.analysis-out.show { display: block; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+.verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.verdict-pill {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 2px;
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+.verdict-pill.bull { background: rgba(62,207,178,0.12); color: var(--i-accent); border: 1px solid rgba(62,207,178,0.3); }
+.verdict-pill.bear { background: rgba(224,80,96,0.1); color: var(--danger); border: 1px solid rgba(224,80,96,0.3); }
+.verdict-pill.neutral { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+.verdict-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.rc-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.rc-content {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.65;
+}
+
+.rc-content strong { color: var(--text); }
+
+.full-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  line-height: 1.8;
+  font-size: 15px;
+  color: var(--text2);
+}
+
+.full-result h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  margin: 22px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.full-result h4:first-child { margin-top: 0; }
+
+/* ─── GLOSSARY ─── */
+#page-glossary {
+  padding: 48px 48px 80px;
+  max-width: 1000px;
+  display: none;
+}
+
+.gloss-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.gloss-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  transition: border-color 0.2s;
+}
+
+.gloss-card:hover { border-color: var(--border2); }
+
+.gloss-term {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.gloss-def {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.gloss-eg {
+  font-size: 12px;
+  color: var(--i-accent);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width: 900px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+  .menu-toggle { display: flex; }
+  #page-home, #page-chapters, #page-lesson, #page-news, #page-glossary { padding: 60px 20px 80px; }
+}
 </style>
 </head>
 <body>
 
-<canvas id="matrix-canvas"></canvas>
+<!-- Mobile toggle -->
+<button class="menu-toggle" onclick="toggleSidebar()" id="menuToggle">☰</button>
 
-<div class="content-wrapper">
-
-  <!-- HEADER -->
-  <header class="header">
-    <div class="logo">NEX<span>U</span>S // <span style="font-size:14px;color:rgba(0,255,65,0.6)">MARKET INTEL</span></div>
-    <div class="header-right">
-      <span><span class="status-dot"></span>LIVE FEED</span>
-      <span style="color:rgba(0,255,65,0.5)">|</span>
-      <span style="color:rgba(0,255,65,0.5)">NODE: <span style="color:var(--cyan)">0x4F2A</span></span>
-      <span style="color:rgba(0,255,65,0.5)">|</span>
-      <div class="clock" id="clock">00:00:00</div>
+<!-- ─── SIDEBAR ─── -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-diamond"></div>
+      StockSensei
     </div>
-  </header>
+    <div class="logo-sub">COMPLETE PROGRAM</div>
+  </div>
 
-  <!-- NAV TABS -->
-  <nav class="nav-tabs">
-    <button class="nav-tab active" onclick="switchTab('overview')">⬡ OVERVIEW</button>
-    <button class="nav-tab" onclick="switchTab('markets')">▲ MARKETS</button>
-    <button class="nav-tab" onclick="switchTab('news')">⚡ INTEL FEED</button>
-  </nav>
-
-  <!-- TICKER -->
-  <div class="ticker-bar">
-    <div class="ticker-label">LIVE</div>
-    <div style="overflow:hidden;flex:1">
-      <div class="ticker-content" id="ticker"></div>
+  <div class="sidebar-progress">
+    <div class="sp-label">
+      <span>OVERALL PROGRESS</span>
+      <span id="spText">0/16</span>
+    </div>
+    <div class="sp-bar">
+      <div class="sp-fill" id="spFill" style="width:0%"></div>
     </div>
   </div>
 
-  <!-- OVERVIEW TAB -->
-  <div class="main active" id="overview-view">
-    <!-- Left: Market summary -->
-    <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">MARKET OVERVIEW</span>
-          <span class="panel-badge">LIVE</span>
-        </div>
-        <div class="panel-body">
-          <div class="overview-grid" id="overview-cards"></div>
-          <canvas id="overview-chart" height="140"></canvas>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">SECTOR PERFORMANCE</span>
-          <span class="panel-badge">TODAY</span>
-        </div>
-        <div class="panel-body" id="sector-bars"></div>
-      </div>
-    </div>
-
-    <!-- Right: AI news summary -->
-    <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">⚡ AI INTEL BRIEF</span>
-          <span class="panel-badge">POWERED BY CLAUDE</span>
-        </div>
-        <div class="panel-body" id="ai-brief">
-          <div class="loading"><div class="spinner"></div><span class="ai-dots">CONNECTING TO INTEL CORE</span></div>
-        </div>
-      </div>
-      <div class="panel" style="flex:1">
-        <div class="panel-header">
-          <span class="panel-title">TOP HEADLINES</span>
-          <span class="panel-badge" id="news-count">LOADING</span>
-        </div>
-        <div class="panel-body">
-          <div class="news-feed" id="overview-headlines"></div>
-        </div>
-      </div>
-    </div>
+  <div class="sidebar-nav" id="sidebarNav">
+    <!-- rendered by JS -->
   </div>
 
-  <!-- MARKETS TAB -->
-  <div class="main" id="markets-view">
-    <div class="panel" style="grid-column:1/-1">
-      <div class="panel-header">
-        <span class="panel-title">INDICES</span>
-        <span class="panel-badge">SIMULATED LIVE DATA</span>
+  <div class="sidebar-tools">
+    <button class="tool-btn" id="tool-news" onclick="goPage('news')">
+      <span class="tool-icon">📰</span> News Lab
+    </button>
+    <button class="tool-btn" id="tool-glossary" onclick="goPage('glossary')">
+      <span class="tool-icon">📖</span> Glossary
+    </button>
+  </div>
+</div>
+
+<!-- ─── MAIN ─── -->
+<div id="main">
+
+  <!-- HOME -->
+  <div id="page-home">
+    <div class="home-eyebrow">◈ WELCOME TO YOUR LEARNING JOURNEY</div>
+    <div class="home-title">
+      Learn the<br><span class="accent-b">Markets</span><br>from <span class="accent-i">Zero.</span>
+    </div>
+    <div class="home-desc">
+      A complete, structured program to take you from absolute beginner to confident intermediate investor. 16 chapters, quizzes, action items, a live news analyser, and a full glossary — all in one place.
+    </div>
+    <div class="home-stats">
+      <div class="stat-card">
+        <div class="stat-num gold">16</div>
+        <div class="stat-label">TOTAL CHAPTERS</div>
       </div>
-      <div class="panel-body">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" id="indices-grid"></div>
+      <div class="stat-card">
+        <div class="stat-num gold" id="stat-done">0</div>
+        <div class="stat-label">COMPLETED</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num teal" id="stat-pct">0%</div>
+        <div class="stat-label">PROGRESS</div>
       </div>
     </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">EQUITIES</span>
-        <span class="panel-badge">TOP MOVERS</span>
+    <div class="season-cards">
+      <div class="season-card beginner" onclick="goPage('beginner')">
+        <div class="sc-tag b">SEASON 1 · BEGINNER</div>
+        <div class="sc-title">Foundation &<br>First Steps</div>
+        <div class="sc-desc">8 chapters covering money basics, stocks, how to buy, mutual funds, risk, and the psychology of investing.</div>
+        <div class="sc-progress"><div class="sc-progress-fill" id="prog-b" style="width:0%"></div></div>
+        <div class="sc-progress-label" id="prog-b-text">0 / 8 complete</div>
       </div>
-      <div class="panel-body">
-        <table class="market-table" id="stocks-table">
-          <thead><tr><th>SYM</th><th>NAME</th><th>PRICE</th><th>CHG%</th><th>TREND</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">CRYPTO</span>
-        <span class="panel-badge">24H</span>
-      </div>
-      <div class="panel-body">
-        <table class="market-table" id="crypto-table">
-          <thead><tr><th>SYM</th><th>NAME</th><th>PRICE</th><th>CHG%</th><th>TREND</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">FOREX / COMMODITIES</span>
-        <span class="panel-badge">SPOT</span>
-      </div>
-      <div class="panel-body">
-        <table class="market-table" id="forex-table">
-          <thead><tr><th>PAIR</th><th>NAME</th><th>RATE</th><th>CHG%</th><th>TREND</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="season-card intermediate" onclick="goPage('intermediate')">
+        <div class="sc-tag i">SEASON 2 · INTERMEDIATE</div>
+        <div class="sc-title">Analysis &<br>Real Decisions</div>
+        <div class="sc-desc">8 chapters: financial statements, valuation, sectors, IPOs, taxation, macroeconomics, portfolio management, and annual reports.</div>
+        <div class="sc-progress"><div class="sc-progress-fill" id="prog-i" style="width:0%"></div></div>
+        <div class="sc-progress-label" id="prog-i-text">0 / 8 complete</div>
       </div>
     </div>
   </div>
 
-  <!-- NEWS TAB -->
-  <div class="main" id="news-view">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">WORLD INTEL FEED</span>
-        <span class="panel-badge" id="news-tab-count">LOADING</span>
-      </div>
-      <div class="panel-body">
-        <div class="news-feed" id="main-news-feed">
-          <div class="loading"><div class="spinner"></div><span class="ai-dots">FETCHING INTEL</span></div>
+  <!-- CHAPTER LIST -->
+  <div id="page-chapters">
+    <div class="page-header">
+      <div class="page-eyebrow" id="chapListEyebrow">SEASON 1 · BEGINNER</div>
+      <div class="page-title" id="chapListTitle">Foundation & First Steps</div>
+      <div class="page-sub" id="chapListSub">Complete each chapter to unlock the next.</div>
+    </div>
+    <div class="chapter-list" id="chapterList"></div>
+  </div>
+
+  <!-- LESSON -->
+  <div id="page-lesson">
+    <div class="lesson-topbar">
+      <button class="back-btn" id="lessonBackBtn" onclick="lessonBack()">← BACK</button>
+      <span class="lesson-crumb" id="lessonCrumb"></span>
+    </div>
+    <div class="lesson-layout">
+      <div id="lessonBody"></div>
+      <div class="lesson-sidebar" id="lessonSidebar"></div>
+    </div>
+  </div>
+
+  <!-- NEWS LAB -->
+  <div id="page-news">
+    <div class="news-intro">
+      <div class="news-big-icon">📰</div>
+      <div>
+        <div class="news-title">News <span>Lab</span></div>
+        <div class="news-sub">
+          PASTE ANY FINANCIAL HEADLINE OR PARAGRAPH<br>
+          AI BREAKS IT DOWN · IMPACT · SECTORS · WHAT TO DO
         </div>
       </div>
     </div>
-
-    <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">CATEGORY FILTER</span>
-        </div>
-        <div class="panel-body" id="cat-filter" style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button onclick="filterNews('all')" class="filter-btn active-filter" data-cat="all">ALL</button>
-          <button onclick="filterNews('economy')" class="filter-btn" data-cat="economy">ECONOMY</button>
-          <button onclick="filterNews('tech')" class="filter-btn" data-cat="tech">TECH</button>
-          <button onclick="filterNews('world')" class="filter-btn" data-cat="world">WORLD</button>
-          <button onclick="filterNews('market')" class="filter-btn" data-cat="market">MARKETS</button>
-        </div>
+    <div class="news-input-card">
+      <label class="input-label">YOUR NEWS HEADLINE OR PARAGRAPH</label>
+      <textarea id="newsInput" placeholder="e.g. 'RBI cuts repo rate by 25 basis points to 6.25%' — or paste any financial news you've read..."></textarea>
+      <div class="examples-row">
+        <span class="input-label" style="width:100%;margin-bottom:2px;">TRY AN EXAMPLE →</span>
+        <div class="example-chip" onclick="fillEx(0)">RBI rate cut</div>
+        <div class="example-chip" onclick="fillEx(1)">Inflation rises</div>
+        <div class="example-chip" onclick="fillEx(2)">Company profit up 40%</div>
+        <div class="example-chip" onclick="fillEx(3)">US Fed hikes rates</div>
+        <div class="example-chip" onclick="fillEx(4)">FII selling India</div>
+        <div class="example-chip" onclick="fillEx(5)">Crude oil spike</div>
+        <div class="example-chip" onclick="fillEx(6)">Rupee all-time low</div>
       </div>
-
-      <div class="panel" style="flex:1">
-        <div class="panel-header">
-          <span class="panel-title">AI ANALYSIS</span>
-          <span class="panel-badge">CLAUDE</span>
-        </div>
-        <div class="panel-body" id="ai-analysis">
-          <div class="loading"><div class="spinner"></div><span class="ai-dots">ANALYZING</span></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">SOURCE INTEGRITY</span>
-        </div>
-        <div class="panel-body" id="source-list" style="font-size:11px;color:rgba(0,255,65,0.7);line-height:2">
-          <div>▶ Reuters ............. <span style="color:var(--green)">VERIFIED</span></div>
-          <div>▶ BBC News ............ <span style="color:var(--green)">VERIFIED</span></div>
-          <div>▶ AP News ............. <span style="color:var(--green)">VERIFIED</span></div>
-          <div>▶ Financial Times ..... <span style="color:var(--cyan)">PREMIUM</span></div>
-          <div>▶ Bloomberg .......... <span style="color:var(--cyan)">PREMIUM</span></div>
-          <div>▶ The Guardian ........ <span style="color:var(--green)">VERIFIED</span></div>
-        </div>
-      </div>
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyzeNews()">
+        ⚡ Analyse This News
+      </button>
     </div>
+    <div class="loading-wrap" id="loadingWrap">
+      <div class="spinner"></div>
+      <div class="loading-text">READING THE MARKET TEA LEAVES...</div>
+    </div>
+    <div class="analysis-out" id="analysisOut"></div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div id="page-glossary">
+    <div class="page-header">
+      <div class="page-eyebrow i">REFERENCE</div>
+      <div class="page-title">Glossary</div>
+      <div class="page-sub">Key terms from both seasons — with plain-English definitions and real examples.</div>
+    </div>
+    <div class="gloss-grid" id="glossGrid"></div>
   </div>
 
 </div>
 
-<style>
-.filter-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: rgba(0,255,65,0.6);
-  font-family: 'Orbitron', monospace;
-  font-size: 9px;
-  letter-spacing: 2px;
-  padding: 5px 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.filter-btn:hover, .active-filter {
-  background: var(--green-glow);
-  border-color: var(--green);
-  color: var(--green);
-  text-shadow: 0 0 8px var(--green);
-}
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-// ─── MATRIX BACKGROUND ─────────────────────────────────────────────────────
-const canvas = document.getElementById('matrix-canvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const cols = Math.floor(canvas.width / 14);
-const drops = Array(cols).fill(1);
-const chars = '01アイウエオカキクケコ0110NEXUS∑∇λΨ';
+// ════════════════════════════════════
+// DATA
+// ════════════════════════════════════
 
-function drawMatrix() {
-  ctx.fillStyle = 'rgba(1,10,2,0.05)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#00ff41';
-  ctx.font = '12px Share Tech Mono';
-  drops.forEach((y, i) => {
-    const ch = chars[Math.floor(Math.random() * chars.length)];
-    ctx.fillText(ch, i * 14, y * 14);
-    if (y * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-    drops[i]++;
-  });
-}
-setInterval(drawMatrix, 45);
-
-// ─── CLOCK ──────────────────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
-    .map(n => String(n).padStart(2,'0')).join(':');
-  document.getElementById('clock').textContent = t;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ─── MARKET DATA ─────────────────────────────────────────────────────────────
-const STOCKS = [
-  {sym:'NVDA',name:'NVIDIA Corp',price:875.32,chg:3.21},
-  {sym:'AAPL',name:'Apple Inc',price:192.45,chg:-0.87},
-  {sym:'MSFT',name:'Microsoft',price:415.20,chg:1.14},
-  {sym:'GOOGL',name:'Alphabet',price:178.90,chg:0.43},
-  {sym:'META',name:'Meta Platforms',price:527.60,chg:2.76},
-  {sym:'AMZN',name:'Amazon',price:198.30,chg:-1.22},
-  {sym:'TSLA',name:'Tesla',price:245.80,chg:-2.14},
-  {sym:'AMD',name:'Adv Micro Devices',price:162.40,chg:4.53},
-  {sym:'PLTR',name:'Palantir',price:82.17,chg:6.24},
-  {sym:'INTC',name:'Intel Corp',price:43.22,chg:-3.41}
-];
-
-const CRYPTO = [
-  {sym:'BTC',name:'Bitcoin',price:97420.50,chg:1.83},
-  {sym:'ETH',name:'Ethereum',price:3845.20,chg:2.41},
-  {sym:'SOL',name:'Solana',price:198.30,chg:5.12},
-  {sym:'BNB',name:'Binance Coin',price:612.40,chg:-0.76},
-  {sym:'XRP',name:'Ripple',price:2.34,chg:3.87},
-  {sym:'ADA',name:'Cardano',price:1.02,chg:-1.44},
-  {sym:'AVAX',name:'Avalanche',price:42.80,chg:7.23},
-  {sym:'LINK',name:'Chainlink',price:18.64,chg:2.19},
-  {sym:'DOT',name:'Polkadot',price:9.47,chg:-0.83},
-  {sym:'MATIC',name:'Polygon',price:1.18,chg:-2.31}
-];
-
-const FOREX = [
-  {sym:'XAU/USD',name:'Gold Spot',price:2318.40,chg:0.32},
-  {sym:'XAG/USD',name:'Silver Spot',price:27.84,chg:0.91},
-  {sym:'EUR/USD',name:'Euro / Dollar',price:1.0842,chg:-0.12},
-  {sym:'GBP/USD',name:'Pound / Dollar',price:1.2631,chg:0.08},
-  {sym:'USD/JPY',name:'Dollar / Yen',price:149.82,chg:0.24},
-  {sym:'USD/CNH',name:'Dollar / Yuan',price:7.2341,chg:-0.05},
-  {sym:'WTI',name:'Crude Oil WTI',price:78.43,chg:-1.21},
-  {sym:'BTC/USDT',name:'BTC Perpetual',price:97380,chg:1.74},
-];
-
-const INDICES = [
-  {sym:'S&P 500',val:5218.40,chg:0.74},
-  {sym:'NASDAQ',val:16420.10,chg:1.12},
-  {sym:'DOW',val:39142.30,chg:0.21},
-  {sym:'VIX',val:14.23,chg:-5.42},
-  {sym:'DAX',val:18240.50,chg:0.43},
-  {sym:'NIKKEI',val:40120.80,chg:1.87},
-  {sym:'FTSE 100',val:7842.30,chg:0.18},
-  {sym:'HSI',val:17320.40,chg:-0.93},
-];
-
-// Simulate live price movements
-let liveStocks = JSON.parse(JSON.stringify(STOCKS));
-let liveCrypto = JSON.parse(JSON.stringify(CRYPTO));
-let liveForex = JSON.parse(JSON.stringify(FOREX));
-let liveIndices = JSON.parse(JSON.stringify(INDICES));
-
-function nudge(arr) {
-  arr.forEach(item => {
-    const delta = (Math.random() - 0.497) * item.price * 0.0015;
-    item.price = Math.max(0.001, item.price + delta);
-    item.chg += (Math.random() - 0.5) * 0.1;
-  });
-}
-
-// History for sparklines
-const history = {};
-[...STOCKS,...CRYPTO,...FOREX].forEach(s => {
-  history[s.sym] = Array.from({length:20}, () => s.price * (0.97 + Math.random()*0.06));
-});
-
-function sparklineSVG(data, positive) {
-  const min = Math.min(...data), max = Math.max(...data);
-  const range = max - min || 1;
-  const w = 60, h = 20;
-  const pts = data.map((v,i) => `${(i/(data.length-1))*w},${h - ((v-min)/range)*h}`).join(' ');
-  const color = positive ? '#00ff41' : '#ff2a2a';
-  return `<svg class="sparkline" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
-}
-
-function fmtPrice(p, sym) {
-  if (p > 1000) return '$' + p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  if (p < 10) return p.toFixed(4);
-  return p.toFixed(2);
-}
-
-function renderTable(id, data, fmt) {
-  const tbody = document.querySelector(`#${id} tbody`);
-  if (!tbody) return;
-  tbody.innerHTML = data.map(item => {
-    const pos = item.chg >= 0;
-    const cls = pos ? 'up' : 'down';
-    const arrow = pos ? '▲' : '▼';
-    history[item.sym] = history[item.sym] || [];
-    history[item.sym].push(item.price);
-    if (history[item.sym].length > 20) history[item.sym].shift();
-    return `<tr>
-      <td class="sym">${item.sym}</td>
-      <td class="name">${item.name}</td>
-      <td class="price">${fmtPrice(item.price, item.sym)}</td>
-      <td class="${cls}">${arrow} ${Math.abs(item.chg).toFixed(2)}%</td>
-      <td>${sparklineSVG(history[item.sym], pos)}</td>
-    </tr>`;
-  }).join('');
-}
-
-function renderIndices() {
-  const el = document.getElementById('indices-grid');
-  if (!el) return;
-  el.innerHTML = liveIndices.map(idx => {
-    const pos = idx.chg >= 0;
-    const cls = pos ? 'up' : 'down';
-    return `<div class="big-stat">
-      <div class="label">${idx.sym}</div>
-      <div class="value ${cls}">${idx.val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-      <div class="change ${cls}">${pos?'▲':'▼'} ${Math.abs(idx.chg).toFixed(2)}%</div>
-    </div>`;
-  }).join('');
-}
-
-function renderOverviewCards() {
-  const el = document.getElementById('overview-cards');
-  if (!el) return;
-  const cards = [
-    {label:'S&P 500', val:'5,218.40', chg:'+0.74%', pos:true},
-    {label:'BTC/USD', val:'$97,420', chg:'+1.83%', pos:true},
-    {label:'GOLD', val:'$2,318', chg:'+0.32%', pos:true},
-    {label:'VIX', val:'14.23', chg:'-5.42%', pos:false},
-    {label:'EUR/USD', val:'1.0842', chg:'-0.12%', pos:false},
-    {label:'OIL WTI', val:'$78.43', chg:'-1.21%', pos:false},
-  ];
-  el.innerHTML = cards.map(c => `
-    <div class="ov-card">
-      <div class="ov-label">${c.label}</div>
-      <div class="ov-val" style="color:${c.pos?'var(--green)':'var(--red)'}">${c.val}</div>
-      <div style="font-size:10px;color:${c.pos?'var(--green)':'var(--red)'}">${c.chg}</div>
-    </div>
-  `).join('');
-}
-
-function renderSectorBars() {
-  const el = document.getElementById('sector-bars');
-  if (!el) return;
-  const sectors = [
-    {name:'TECHNOLOGY',chg:2.14},{name:'SEMICONDUCTORS',chg:3.87},
-    {name:'FINANCIALS',chg:0.43},{name:'ENERGY',chg:-1.21},
-    {name:'HEALTHCARE',chg:0.82},{name:'CONSUMER',chg:-0.34},
-    {name:'DEFENSE',chg:1.56},{name:'REAL ESTATE',chg:-0.78},
-  ];
-  el.innerHTML = sectors.map(s => {
-    const pos = s.chg >= 0;
-    const pct = Math.abs(s.chg);
-    const barW = Math.min(pct * 20, 100);
-    return `<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:10px;">
-      <span style="width:130px;color:rgba(0,255,65,0.7);letter-spacing:1px">${s.name}</span>
-      <div style="flex:1;background:rgba(0,255,65,0.05);height:14px;position:relative;">
-        <div style="width:${barW}%;height:100%;background:${pos?'rgba(0,255,65,0.3)':'rgba(255,42,42,0.3)'};border-right:2px solid ${pos?'var(--green)':'var(--red)'}"></div>
+const BEGINNER = [
+  {
+    id:'b0', season:'b', num:1,
+    title:"Why Money Sits Idle & What You Can Do",
+    sub:"The fundamental problem this all solves",
+    tag:"FOUNDATION",
+    readTime:"8 min",
+    content:`
+      <h3>The Problem with Keeping Cash Under Your Mattress</h3>
+      <p>Let's start not with stocks, but with a simple question: why does money lose value over time?</p>
+      <div class="callout">Imagine in 2010, ₹100 could buy you 10 cups of chai. In 2024, those same ₹100 might only get you 5 cups. The chai didn't get better — money got weaker. This is called <strong>inflation</strong>.</div>
+      <p>Inflation runs at roughly 5–7% per year in India. If your money isn't growing by at least that much, it's actually shrinking in real value.</p>
+      <h3>So What Are Your Options?</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">SAVINGS ACCOUNT</div><div class="term-def">~3–4% interest/year. Barely beats inflation. Safe but slow.</div></div>
+        <div class="term-card"><div class="term-name">FIXED DEPOSIT (FD)</div><div class="term-def">~6–7% interest. Slightly better. But locked up for years.</div></div>
+        <div class="term-card"><div class="term-name">GOLD</div><div class="term-def">Traditional. Beats inflation long-term. But no income from it.</div></div>
+        <div class="term-card"><div class="term-name">STOCK MARKET</div><div class="term-def">~12–15% avg/year historically. Higher risk, higher reward.</div></div>
       </div>
-      <span style="width:50px;text-align:right;color:${pos?'var(--green)':'var(--red)'}">${pos?'+':''}${s.chg}%</span>
+      <h3>The Magic of Compounding</h3>
+      <p>This is the single most powerful concept in personal finance. Einstein allegedly called it "the eighth wonder of the world."</p>
+      <div class="analogy-box">
+        <div class="analogy-label">🔢 THE NUMBERS</div>
+        <p style="margin:0;font-size:14px;color:var(--text2);">₹5,000/month invested for <strong style="color:var(--text)">30 years</strong> at 12% return = <strong style="color:var(--b-accent)">₹1.76 Crore</strong><br>Your total investment = only ₹18 Lakhs. The market did the rest while you slept.</p>
+      </div>
+      <p><strong>Time is your biggest asset.</strong> Starting at 22 beats starting at 32 by a massive margin. Every year you delay costs you exponentially.</p>
+      <h3>The Investor's Mindset</h3>
+      <p>Investing is not gambling. Gambling is zero-sum — someone wins only when someone else loses. Investing in the market is owning real businesses that create real value over time.</p>
+      <div class="callout green">When you buy shares of a company, you become a part-owner. If the company builds more factories, hires more workers, sells more products — you benefit. That's fundamentally different from betting.</div>`,
+    homework:["Calculate how much ₹1,000/month would be worth after 20 years at 12% using any SIP calculator","Check what interest rate your current savings account gives you","Think of one thing you spend on that doesn't grow — vs. something that could"],
+    quiz:{q:"If inflation is 6%/year and your savings account gives 4%, what is happening to your money?",opts:["It's growing slowly","It's losing real value","It's staying the same","It depends on the bank"],correct:1,explanation:"Even though your account shows more rupees, in terms of what you can actually buy, you're losing 2% per year. That's the inflation gap."}
+  },
+  {
+    id:'b1', season:'b', num:2,
+    title:"What Is a Stock? (Really)",
+    sub:"Ownership, not just a number on a screen",
+    tag:"STOCKS 101",
+    readTime:"10 min",
+    content:`
+      <h3>Companies Need Money to Grow</h3>
+      <p>Imagine you run a restaurant in Lucknow. Business is great, you want to open 10 more across UP. You need ₹5 crore. Two choices:</p>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">BORROW (DEBT)</div><div class="term-def">Take a bank loan. Keep full ownership but must pay interest regardless of profit or loss.</div></div>
+        <div class="term-card"><div class="term-name">SELL OWNERSHIP (EQUITY)</div><div class="term-def">Sell pieces of the restaurant to investors. Get cash, they get a share of future profits.</div></div>
+      </div>
+      <p>A <strong>stock</strong> is that piece of ownership — called a <strong>share</strong>. When a company goes public, it sells small ownership pieces to millions of people.</p>
+      <h3>What You Actually Own</h3>
+      <div class="analogy-box">
+        <div class="analogy-label">🏢 REAL EXAMPLE</div>
+        <p style="margin:0;font-size:14px;color:var(--text2);">Reliance Industries has ~676 crore total shares. If you own 100 shares, you own <strong style="color:var(--text)">a tiny fraction of the entire company</strong> — its factories, brands, pipelines, everything. Tiny? Yes. But real ownership.</p>
+      </div>
+      <h3>How Do You Make Money from Stocks?</h3>
+      <p><strong>1. Price Appreciation:</strong> Buy at ₹500, rises to ₹800. Sell — profit ₹300/share. Happens when the company grows more valuable.</p>
+      <p><strong>2. Dividends:</strong> Some companies share profits with shareholders. Own 1,000 shares at ₹5 dividend = ₹5,000 deposited, just for holding.</p>
+      <h3>Why Do Prices Move?</h3>
+      <div class="callout"><strong>Company results</strong> (profits rose → price up), <strong>news</strong> (CEO scandal → price down), <strong>economy</strong> (recession fears → broad market falls), <strong>emotions</strong> (panic selling, euphoric buying).</div>
+      <p>Short run: prices follow emotions. Long run: they track actual business performance. This is why long-term investors care less about daily swings.</p>
+      <h3>The Indian Market Setup</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">BSE</div><div class="term-def">Bombay Stock Exchange — Asia's oldest (1875). Home of SENSEX (top 30 companies).</div></div>
+        <div class="term-card"><div class="term-name">NSE</div><div class="term-def">National Stock Exchange — India's largest by volume. Home of NIFTY 50 (top 50 companies).</div></div>
+        <div class="term-card"><div class="term-name">SEBI</div><div class="term-def">The regulator. Protects investors, makes and enforces rules.</div></div>
+        <div class="term-card"><div class="term-name">DEMAT ACCOUNT</div><div class="term-def">Your digital locker for shares. Like a bank account, but for stocks.</div></div>
+      </div>`,
+    homework:["Google 'NIFTY 50 stocks list' — how many companies do you recognise?","Search '[any company you use daily] share price NSE' — watch the price for 5 minutes","Notice: does the price change every few seconds? That's real buying and selling happening live"],
+    quiz:{q:"A company has 1 crore total shares. You buy 10,000 shares. What percentage do you own?",opts:["1%","0.1%","10%","0.01%"],correct:0,explanation:"10,000 ÷ 1,00,00,000 = 0.01 = 1%. You own 1% of the entire company — every asset, every profit, every future."}
+  },
+  {
+    id:'b2', season:'b', num:3,
+    title:"How to Actually Buy a Stock",
+    sub:"Demat accounts, brokers & your first order",
+    tag:"GETTING STARTED",
+    readTime:"12 min",
+    content:`
+      <h3>The Three Things You Need</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">BANK ACCOUNT</div><div class="term-def">Your regular account. Money flows from here when you buy, returns here when you sell.</div></div>
+        <div class="term-card"><div class="term-name">TRADING ACCOUNT</div><div class="term-def">The platform where you place buy/sell orders on the exchange.</div></div>
+        <div class="term-card"><div class="term-name">DEMAT ACCOUNT</div><div class="term-def">Where your shares are stored electronically. Modern brokers open all three together automatically.</div></div>
+      </div>
+      <h3>Choosing a Broker</h3>
+      <div class="callout green"><strong>Zerodha</strong> — India's largest. Very clean interface. ₹20/trade intraday, free delivery.<br><br><strong>Groww</strong> — Extremely beginner-friendly. Free delivery trades. Great app.<br><br><strong>Upstox</strong> — Similar to Zerodha, competitive pricing.</div>
+      <p>Opening needs: PAN card, Aadhaar, bank details, selfie. Takes 2–3 days to activate.</p>
+      <h3>Types of Orders</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">MARKET ORDER</div><div class="term-def">Buy immediately at current price. Fast, but you might pay slightly more than expected.</div></div>
+        <div class="term-card"><div class="term-name">LIMIT ORDER</div><div class="term-def">"Buy only if it falls to ₹450." The order waits. You get control over your price.</div></div>
+        <div class="term-card"><div class="term-name">DELIVERY (CNC)</div><div class="term-def">Buy and hold. Shares go to your Demat. Use this for long-term investing.</div></div>
+        <div class="term-card"><div class="term-name">INTRADAY (MIS)</div><div class="term-def">Buy and sell within the same day. No overnight holding. For traders, NOT beginners.</div></div>
+      </div>
+      <div class="warn-box">⚠️ As a beginner, ONLY use Delivery (CNC) orders. Never trade intraday until you have deep experience. Intraday wipes out 90%+ of beginners.</div>
+      <h3>Market Hours & Settlement</h3>
+      <p>Indian market: <strong>Monday–Friday, 9:15 AM to 3:30 PM IST.</strong> Weekends and public holidays — closed.</p>
+      <p>When you buy, shares arrive in your Demat in <strong>T+1 settlement</strong> — next trading day.</p>
+      <h3>True Cost of a Trade</h3>
+      <div class="analogy-box">
+        <div class="analogy-label">💸 CHARGES ON DELIVERY</div>
+        <p style="font-size:13px;color:var(--text2);line-height:2.2;">Brokerage: ₹0 (Zerodha/Groww delivery)<br>STT: ~0.1% of transaction<br>Exchange + GST + SEBI: tiny<br><strong style="color:var(--text)">Total: roughly 0.1–0.15%</strong></p>
+      </div>`,
+    homework:["Download Groww or Zerodha Kite — explore without investing anything","Search for any stock (e.g. TCS) — look at chart, current price, 52-week high/low","Look up 'Moneybhai virtual trading India' — paper trade to practice with fake money"],
+    quiz:{q:"You want to hold a stock for 2 years. Which order type should you use?",opts:["MIS (Intraday)","CNC (Delivery)","F&O Futures","Either MIS or CNC"],correct:1,explanation:"CNC (Delivery) is for any stock you want to hold overnight or long-term. MIS auto-squares off at day end — you'd be forced to sell the same day."}
+  },
+  {
+    id:'b3', season:'b', num:4,
+    title:"Reading a Company Like a Book",
+    sub:"Fundamental Analysis — the basics",
+    tag:"ANALYSIS BASICS",
+    readTime:"15 min",
+    content:`
+      <h3>What Is Fundamental Analysis?</h3>
+      <p>Before buying a stock, study the business behind it. Fundamental analysis means examining a company's finances, business model, and competitive position to determine if it's a good investment.</p>
+      <div class="analogy-box"><div class="analogy-label">🏠 THE HOUSE ANALOGY</div><p style="margin:0;font-size:14px;color:var(--text2);">If buying a house for ₹80 lakhs, you'd check: Is the structure sound? Is the area growing? Is the price fair vs. similar houses? Fundamental analysis is exactly this — for companies.</p></div>
+      <h3>Key Financial Statements</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">INCOME STATEMENT (P&L)</div><div class="term-def">Revenue → Expenses → Profit. Is the company making money? Growing sales?</div></div>
+        <div class="term-card"><div class="term-name">BALANCE SHEET</div><div class="term-def">What it owns (assets) vs. what it owes (liabilities). Shows financial health.</div></div>
+        <div class="term-card"><div class="term-name">CASH FLOW STATEMENT</div><div class="term-def">Actual cash coming in/out. A company can show paper profit but be cash-poor.</div></div>
+      </div>
+      <h3>The 5 Ratios Every Investor Must Know</h3>
+      <p><strong>1. P/E Ratio:</strong> Stock Price ÷ EPS. If stock is ₹500 and earns ₹25/share, P/E = 20. You're paying ₹20 for every ₹1 of earnings. Compare within same industry only.</p>
+      <p><strong>2. EPS (Earnings Per Share):</strong> Total profit ÷ total shares. Higher, growing EPS = company more profitable per share. This drives long-term stock prices.</p>
+      <p><strong>3. ROE (Return on Equity):</strong> How efficiently management uses shareholders' money. Above 15% is generally good.</p>
+      <p><strong>4. Debt-to-Equity:</strong> How much borrowed vs. shareholders' equity. Below 1 is generally safe. High debt = high risk in downturns.</p>
+      <p><strong>5. Revenue Growth:</strong> Is sales growing year-over-year? Consistent 15%+ growth is a strong positive sign.</p>
+      <div class="callout green">📌 Find all these free on <strong>Screener.in</strong> or <strong>Tickertape.in</strong> — just search any Indian company name.</div>
+      <h3>Qualitative Factors (Beyond Numbers)</h3>
+      <p>• <strong>Moat:</strong> Competitive advantage competitors can't copy (brand, patents, network effects)</p>
+      <p>• <strong>Management:</strong> Honest and capable? Any past controversies?</p>
+      <p>• <strong>Industry tailwinds:</strong> Is the sector growing? (EVs, cloud, healthcare)</p>
+      <p>• <strong>Customer loyalty:</strong> Do customers keep coming back? (Fevicol, Asian Paints)</p>`,
+    homework:["Go to screener.in → search 'Asian Paints' → look at P/E, ROE, and 10-year sales growth","Compare Asian Paints P/E vs. Berger Paints — context matters!","Read the 'About' section of one company you'd consider investing in — understand what they actually do"],
+    quiz:{q:"Company A has P/E of 10. Company B has P/E of 40. Which is definitely the better buy?",opts:["Company A — lower P/E means cheaper","Company B — higher P/E means better quality","Cannot determine without more context","Always buy lower P/E"],correct:2,explanation:"P/E alone tells you nothing. Low P/E could mean a dying business. High P/E could mean a fast-growing company worth every rupee. Always compare with peers, growth rate, and quality."}
+  },
+  {
+    id:'b4', season:'b', num:5,
+    title:"Reading Charts (Technical Analysis)",
+    sub:"Price patterns, trends & key indicators",
+    tag:"TECHNICAL",
+    readTime:"14 min",
+    content:`
+      <h3>What Is Technical Analysis?</h3>
+      <p>Where fundamental analysis studies the business, technical analysis studies the price chart. The belief: all information is already reflected in the price. Patterns repeat because human psychology repeats.</p>
+      <div class="callout">Like weather forecasting — you can't predict with certainty, but patterns (dark clouds = rain likely) help you make better probability calls.</div>
+      <h3>Reading a Candlestick Chart</h3>
+      <div class="analogy-box">
+        <div class="analogy-label">🕯️ ANATOMY OF A CANDLE</div>
+        <p style="margin:0;font-size:14px;color:var(--text2);line-height:2.2;"><strong style="color:#3ecfb2;">Green Candle</strong> = Price closed HIGHER than open (buyers won)<br><strong style="color:#e05060;">Red Candle</strong> = Price closed LOWER than open (sellers won)<br>Body = distance between open and close<br>Wicks = highest and lowest price touched</p>
+      </div>
+      <h3>Support & Resistance — The Most Important Concept</h3>
+      <p><strong>Support</strong> — a price level where stock repeatedly bounced upward. A floor where buyers show up.</p>
+      <p><strong>Resistance</strong> — a level where stock repeatedly failed to go higher. A ceiling where sellers appear.</p>
+      <div class="callout green">If a stock breaks above resistance with high volume → <strong>breakout</strong> — bullish signal. If it breaks below support → <strong>breakdown</strong> — bearish signal.</div>
+      <h3>Three Key Indicators for Beginners</h3>
+      <p><strong>1. Moving Averages (MA):</strong> Smooths out price noise. 50-day and 200-day MA are most watched. Price above 200-day MA = uptrend. 50-day crossing above 200-day = "Golden Cross" = bullish.</p>
+      <p><strong>2. RSI (Relative Strength Index):</strong> Momentum on a 0–100 scale. Above 70 = overbought. Below 30 = oversold. Not a guarantee but a useful probability indicator.</p>
+      <p><strong>3. Volume:</strong> Number of shares traded. High volume confirms a move; low volume questions it. 5% rise on 10x normal volume = genuine. Same rise on low volume = suspect.</p>
+      <div class="warn-box">⚠️ Technical analysis is a tool, not a crystal ball. Use alongside fundamentals, never instead of them.</div>`,
+    homework:["On TradingView.com, search 'NIFTY 50' weekly chart — try to identify a support level","Find any stock's 200-day moving average via the Indicators menu","Check RSI of a stock you're interested in — is it overbought (>70) or oversold (<30)?"],
+    quiz:{q:"A stock has bounced off ₹800 three times over 6 months. What is ₹800 called?",opts:["Resistance level","Support level","Stop loss","Target price"],correct:1,explanation:"₹800 is a support level — a floor where buyers repeatedly step in. If it breaks below ₹800 with volume, that support often becomes a resistance level going forward."}
+  },
+  {
+    id:'b5', season:'b', num:6,
+    title:"Mutual Funds & Index Funds",
+    sub:"The smartest starting point for most people",
+    tag:"MUTUAL FUNDS",
+    readTime:"13 min",
+    content:`
+      <h3>Why Mutual Funds Before Stocks?</h3>
+      <p>Picking individual stocks well requires significant skill, research, and experience. Mutual funds let you participate in market growth without picking individual stocks.</p>
+      <div class="callout green">Studies show that over long periods, most professional fund managers fail to beat simple index funds. Diversification + low cost + time beats stock-picking most of the time.</div>
+      <h3>How Mutual Funds Work</h3>
+      <p>A fund manager collects money from thousands of investors and invests it in a basket of stocks/bonds. You get <strong>units</strong> proportional to your investment. The fund's <strong>NAV (Net Asset Value)</strong> is its per-unit price, calculated daily.</p>
+      <h3>Types of Mutual Funds</h3>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">EQUITY FUNDS</div><div class="term-def">Invest mainly in stocks. Higher risk, higher potential return. Best for 5+ year goals.</div></div>
+        <div class="term-card"><div class="term-name">DEBT FUNDS</div><div class="term-def">Invest in bonds. Lower risk, stable returns. Good for 1–3 year goals.</div></div>
+        <div class="term-card"><div class="term-name">HYBRID FUNDS</div><div class="term-def">Mix of equity and debt. Balanced risk-reward. Good middle ground for beginners.</div></div>
+        <div class="term-card"><div class="term-name">INDEX FUNDS</div><div class="term-def">Tracks an index like Nifty 50. No active management. Very low fees. Highly recommended.</div></div>
+      </div>
+      <h3>Index Funds — The Beginner's Best Friend</h3>
+      <p>A Nifty 50 index fund owns all 50 Nifty companies in proportion. Instant diversification across India's best companies for as little as ₹100/month.</p>
+      <div class="analogy-box"><div class="analogy-label">📊 WHY INDEX FUNDS WIN ON COST</div><p style="font-size:13px;color:var(--text2);line-height:2;">Active fund expense ratio: ~1–2%/year<br>Index fund expense ratio: ~0.1–0.2%/year<br><strong style="color:var(--text)">Over 20 years, that 1.5% difference = lakhs of rupees</strong></p></div>
+      <h3>SIP — The Most Powerful Investing Habit</h3>
+      <p><strong>Systematic Investment Plan (SIP)</strong> = fixed amount invested every month automatically.</p>
+      <p>• <strong>Rupee Cost Averaging:</strong> When markets fall, you buy more units. When they rise, you benefit. You automatically buy more when things are cheap.</p>
+      <p>• <strong>Removes emotion:</strong> Invest regardless of market conditions. No second-guessing.</p>
+      <div class="callout">Start a SIP in a Nifty 50 Index Fund with whatever you can afford — even ₹500/month — and increase it yearly. This single habit, done for 15–20 years, can change your financial life.</div>`,
+    homework:["On Groww, search 'Nifty 50 Index Fund' — look at Nippon or UTI Nifty 50 options","Note the expense ratio (should be under 0.2%) and the 5-year return","Use Groww's SIP calculator — see what ₹2,000/month for 15 years at 12% becomes"],
+    quiz:{q:"Markets fall 20% next month. Your SIP continues. What should you do?",opts:["Stop SIP to avoid losses","Withdraw everything","Continue SIP — you're buying more units cheaper","Switch to gold"],correct:2,explanation:"A market fall is good for long-term SIP investors! ₹5,000 buys more units at lower prices. When markets recover (they always have historically), those extra units multiply your gains."}
+  },
+  {
+    id:'b6', season:'b', num:7,
+    title:"Risk, Portfolio & Diversification",
+    sub:"How to not lose everything",
+    tag:"RISK MANAGEMENT",
+    readTime:"12 min",
+    content:`
+      <h3>Understanding Risk</h3>
+      <p>In investing, risk means <strong>uncertainty of outcome</strong>. Higher potential returns always come with higher uncertainty. There's no free lunch.</p>
+      <div class="term-grid">
+        <div class="term-card"><div class="term-name">MARKET RISK</div><div class="term-def">The whole market falls. Affects everyone — unavoidable.</div></div>
+        <div class="term-card"><div class="term-name">COMPANY RISK</div><div class="term-def">One company does badly. Avoidable through diversification.</div></div>
+        <div class="term-card"><div class="term-name">LIQUIDITY RISK</div><div class="term-def">Can't sell when needed. Stick to large, actively traded stocks.</div></div>
+        <div class="term-card"><div class="term-name">CONCENTRATION RISK</div><div class="term-def">Too much in one stock/sector. If it fails, you're badly hurt. Fix: diversify.</div></div>
+      </div>
+      <h3>Diversification — The Only Free Lunch in Investing</h3>
+      <p>Owning many different assets reduces risk without necessarily reducing returns. If one stock drops 50% but is only 5% of your portfolio, total portfolio drops only 2.5%.</p>
+      <div class="callout green">You want meaningful diversification: different sectors (IT, banking, pharma, FMCG), different company sizes (large/mid-cap), and different asset classes (stocks + gold + debt).</div>
+      <h3>Asset Allocation — Your Most Important Decision</h3>
+      <div class="analogy-box">
+        <div class="analogy-label">📐 BEGINNER ALLOCATION (example)</div>
+        <p style="font-size:13px;color:var(--text2);line-height:2.2;"><strong style="color:var(--text)">60%</strong> — Nifty 50 Index Fund (core, stable equity)<br><strong style="color:var(--text)">20%</strong> — Mid/Small Cap Fund (higher growth)<br><strong style="color:var(--text)">10%</strong> — Gold (hedge against inflation)<br><strong style="color:var(--text)">10%</strong> — Debt Fund / FD (stability, emergency buffer)</p>
+      </div>
+      <h3>The Golden Rules of Risk</h3>
+      <p>• <strong>Never invest emergency money</strong> — keep 6 months expenses in liquid savings, always</p>
+      <p>• <strong>Never invest money you need in less than 3 years</strong> in stocks</p>
+      <p>• <strong>Never borrow to invest</strong> — leverage amplifies losses catastrophically</p>
+      <p>• <strong>No single stock above 10%</strong> of your portfolio — even great companies can fall 50%+</p>
+      <div class="warn-box">The biggest risk isn't losing money in a crash. It's panic-selling at the bottom and missing the recovery. Every major crash (2008, 2020 COVID) was followed by strong recoveries.</div>`,
+    homework:["Write down what % of savings is in: cash, FD, mutual funds, stocks, gold","If you had ₹1 lakh to invest today, decide how to split it — think about your goals","Look up 'Nifty 50 crash recovery history' — how long did each major crash take to recover?"],
+    quiz:{q:"You have ₹10 lakh — all of it in one small company stock. What is your biggest risk?",opts:["Market risk","Liquidity risk","Concentration risk","Currency risk"],correct:2,explanation:"All money in one company is concentration risk. If that company has fraud, bad results, or sector trouble, you could lose most savings. Spreading across 15–20 stocks or using funds eliminates this risk entirely."}
+  },
+  {
+    id:'b7', season:'b', num:8,
+    title:"Psychology of Money & Common Traps",
+    sub:"Your brain is your biggest enemy in markets",
+    tag:"MINDSET",
+    readTime:"11 min",
+    content:`
+      <h3>Why Smart People Lose Money in Markets</h3>
+      <p>The market is a sophisticated machine for transferring money from the impatient to the patient — and from the emotional to the disciplined.</p>
+      <h3>6 Cognitive Biases That Destroy Investors</h3>
+      <p><strong>1. Recency Bias:</strong> Assuming what just happened will continue. After a boom → "it'll last forever" (buy at top). After crash → "it'll keep falling" (sell at bottom).</p>
+      <p><strong>2. Herd Mentality:</strong> "Everyone's buying X, so I should too." How bubbles form. The time to buy is when fear is highest; the time to be careful is peak euphoria.</p>
+      <div class="callout">Warren Buffett's most famous rule: "Be fearful when others are greedy, and greedy when others are fearful."</div>
+      <p><strong>3. Loss Aversion:</strong> We feel losses ~2x more intensely than equivalent gains. Causes holding losers too long (hoping to break even) and selling winners too early.</p>
+      <p><strong>4. Overconfidence:</strong> After a few wins, beginners think they've "figured it out." The market humbles overconfidence at the worst time.</p>
+      <p><strong>5. Confirmation Bias:</strong> We seek info that confirms what we already believe. If bullish on a stock, you'll read bullish articles and dismiss warnings.</p>
+      <p><strong>6. FOMO:</strong> Buying a stock that's already up 200% because "it might keep going." This is how people buy at the absolute top.</p>
+      <h3>Common Traps Beginners Fall Into</h3>
+      <div class="warn-box"><strong>Penny Stock Trap:</strong> "This ₹2 stock can become ₹200!" Low-priced stocks are cheap for a reason — usually terrible businesses. Most penny stocks go to zero.</div>
+      <div class="warn-box" style="margin-top:10px;"><strong>Tips & Telegram Groups:</strong> "Hot tip from insider source" — 99% are pump-and-dump schemes. The tip-giver already bought and will sell to you.</div>
+      <div class="warn-box" style="margin-top:10px;"><strong>F&O Trading Early:</strong> SEBI data shows 90%+ of individual F&O traders lose money. Not for beginners.</div>
+      <h3>Building the Right Habits</h3>
+      <p>• Check portfolio weekly — not daily. Daily checking causes anxiety and impulsive decisions.</p>
+      <p>• Write down your reason for buying BEFORE you buy. Review it when tempted to panic-sell.</p>
+      <div class="callout green">The best investors are often the most boring ones. Consistent SIPs, broad diversification, long time horizons, low costs, and emotional discipline. No fireworks needed.</div>`,
+    homework:["Think of a financial decision you made based on emotion — what would the rational choice have been?","Start an investment journal: date, what you bought, why, what price — review every 3 months","Read Chapter 1 of 'The Psychology of Money' by Morgan Housel (freely available online)"],
+    quiz:{q:"Markets crash 35%. Your well-researched index fund is down. What should you do?",opts:["Sell everything — protect what's left","Buy more — prices are on sale","Watch daily and decide","Switch to crypto"],correct:1,explanation:"A crash is a sale. If your investment thesis is intact and goals haven't changed, buying more at lower prices is mathematically sound. Every major crash in history has recovered. Selling at the bottom locks in losses permanently."}
+  }
+];
+
+const INTERMEDIATE = [
+  {
+    id:'i0', season:'i', num:1,
+    title:"Reading Financial Statements Like a Pro",
+    sub:"P&L, Balance Sheet, Cash Flow — decoded",
+    tag:"DEEP FUNDAMENTALS",
+    readTime:"16 min",
+    content:`
+      <h3>Why Financial Statements Matter</h3>
+      <p>A company's stock price can be manipulated in the short term. Financial statements are the ground truth. Learning to read them fluently is the single biggest skill gap between average and good investors.</p>
+      <div class="pullquote">"Accounting is the language of business. If you don't understand it, you can't read the score of the game." — Warren Buffett</div>
+      <h3>The Income Statement (P&L)</h3>
+      <p>Answers: <em>Is the company making money, and how much?</em></p>
+      <table class="data-table">
+        <tr><th>LINE ITEM</th><th>WHAT IT MEANS</th><th>WATCH FOR</th></tr>
+        <tr><td>Revenue / Sales</td><td>Total money earned from selling</td><td>Consistent YoY growth</td></tr>
+        <tr><td>COGS</td><td>Direct cost to produce what they sell</td><td>Should not grow faster than revenue</td></tr>
+        <tr><td>Gross Profit</td><td>Revenue minus COGS</td><td>Gross margin % = Gross Profit / Revenue</td></tr>
+        <tr><td>EBITDA</td><td>Earnings before interest, tax, depreciation, amortization</td><td>Most used metric — shows operational strength</td></tr>
+        <tr><td>Net Profit (PAT)</td><td>Final profit after ALL costs and taxes</td><td>Net margin % = Net Profit / Revenue</td></tr>
+      </table>
+      <div class="formula-box">GROSS MARGIN % = (Gross Profit / Revenue) × 100<br>OPERATING MARGIN % = (Operating Profit / Revenue) × 100<br>NET PROFIT MARGIN % = (Net Profit / Revenue) × 100</div>
+      <h3>The Balance Sheet</h3>
+      <p>Answers: <em>What does the company own, and what does it owe?</em> A snapshot at a single point in time.</p>
+      <div class="highlight-box">
+        <div class="hl-label">⚖️ THE GOLDEN EQUATION</div>
+        <p style="font-family:'DM Mono',monospace;font-size:17px;color:var(--b-accent);font-weight:500;">Assets = Liabilities + Shareholders' Equity</p>
+        <p style="font-size:13px;margin-top:8px;color:var(--text2);">If a company has ₹100cr in assets and owes ₹60cr, shareholders own ₹40cr. That's the book value.</p>
+      </div>
+      <h3>The Cash Flow Statement — The Most Honest Document</h3>
+      <p>A company can manipulate profits with accounting tricks. Cash flow is much harder to fake. This is why sophisticated investors often read cash flow first.</p>
+      <div class="callout green">A company can be "profitable" on paper but running out of money. Enron is the most famous example. Always verify: is the profit turning into real cash?</div>
+      <table class="data-table">
+        <tr><th>SECTION</th><th>WHAT IT SHOWS</th><th>HEALTHY SIGN</th></tr>
+        <tr><td>Operating Cash Flow (OCF)</td><td>Cash from actual business operations</td><td>OCF > Net Profit (profit is real)</td></tr>
+        <tr><td>Investing Cash Flow</td><td>Money spent on assets, acquisitions</td><td>Negative is OK — investing in growth</td></tr>
+        <tr><td>Financing Cash Flow</td><td>Loans taken/repaid, dividends, shares issued</td><td>Paying down debt = positive signal</td></tr>
+        <tr><td>Free Cash Flow (FCF)</td><td>OCF minus capital expenditure</td><td>Positive FCF = real surplus generated</td></tr>
+      </table>`,
+    homework:["Go to Screener.in → search 'Asian Paints' → look at the P&L for last 5 years — is revenue growing?","Find the Debt-to-Equity for Asian Paints vs. Berger Paints — who is more financially conservative?","Check if Asian Paints' Operating Cash Flow > Net Profit — what does this tell you?"],
+    quiz:{q:"Company X shows ₹100cr net profit but Operating Cash Flow of only ₹20cr. What does this signal?",opts:["Very profitable — great sign","Profits may not be converting to real cash — investigate","Company needs to raise debt","Operating CF doesn't matter"],correct:1,explanation:"When net profit far exceeds operating cash flow, it often signals aggressive revenue recognition, high receivables, or accounting manipulation. This was the early warning sign in many corporate frauds."}
+  },
+  {
+    id:'i1', season:'i', num:2,
+    title:"Valuation — What Is a Company Worth?",
+    sub:"DCF, P/E, EV/EBITDA & the Margin of Safety",
+    tag:"VALUATION",
+    readTime:"18 min",
+    content:`
+      <h3>Price vs. Value — The Most Important Distinction</h3>
+      <p>The market gives you a price every second. Value is something you calculate yourself. The goal: is the stock's current price justified, too high, or too low?</p>
+      <div class="pullquote">"Price is what you pay. Value is what you get." — Warren Buffett</div>
+      <h3>Method 1: P/E Ratio — Context Is Everything</h3>
+      <table class="data-table">
+        <tr><th>SITUATION</th><th>WHAT IT MEANS</th></tr>
+        <tr><td>P/E low vs. historical average</td><td>Stock may be undervalued — opportunity?</td></tr>
+        <tr><td>P/E high vs. sector peers</td><td>Market expects faster growth — is that realistic?</td></tr>
+        <tr><td>P/E negative</td><td>Company is losing money</td></tr>
+        <tr><td>P/E low but revenue declining</td><td>"Value trap" — cheap and getting worse</td></tr>
+      </table>
+      <div class="highlight-box">
+        <div class="hl-label">📐 PEG RATIO — P/E MADE SMARTER</div>
+        <p style="font-size:14px;color:var(--text2);">PEG = P/E ÷ Earnings Growth Rate. P/E of 30 with 30% growth (PEG=1) may be fairer than P/E of 15 with 5% growth (PEG=3). PEG below 1 is considered potentially undervalued.</p>
+      </div>
+      <h3>Method 2: EV/EBITDA — The Professional's Tool</h3>
+      <div class="formula-box">Enterprise Value (EV) = Market Cap + Total Debt − Cash<br>EV/EBITDA = Enterprise Value / EBITDA<br><br>Compares total cost of buying the company (including debt)<br>vs. its operational earnings.</div>
+      <p>Preferred over P/E by professionals because it's unaffected by capital structure and tax rates. IT: 20–30x; FMCG: 30–40x; Commodities: 5–8x.</p>
+      <h3>Method 3: DCF — Discounted Cash Flow</h3>
+      <p>A company is worth the sum of ALL future cash flows it will generate, discounted back to today's value.</p>
+      <div class="formula-box">INTRINSIC VALUE = FCF₁/(1+r)¹ + FCF₂/(1+r)² + ... + Terminal Value<br><br>Where r = Discount rate (typically 10–15% for India)</div>
+      <div class="warn-box">⚠️ DCF is extremely sensitive to assumptions. Change your growth rate by 2% and the value changes by 30%+. Use as a range estimate, not a precise answer.</div>
+      <h3>The Margin of Safety</h3>
+      <p>Benjamin Graham's greatest concept: only buy when the stock trades at a significant discount to your calculated intrinsic value. If intrinsic value = ₹1,000, only buy at ₹700 or below. That ₹300 gap is your safety buffer — it protects you when your assumptions are wrong.</p>`,
+    homework:["On Screener.in, look at P/E of TCS for each year over the last 5 years — what's its historical range?","Compare P/E of Infosys vs. TCS vs. Wipro — which looks cheapest? Is cheapest best?","Google 'EV/EBITDA sector averages India' — note normal ranges for FMCG vs. metals"],
+    quiz:{q:"A cement company has P/E of 8, sector average is 18. What is the most accurate interpretation?",opts:["Definitely undervalued — buy immediately","Could be undervalued, or a value trap — needs investigation","High P/E companies are always better","P/E is irrelevant for cement"],correct:1,explanation:"A low P/E vs. sector average raises a question, not an answer. Is it cheap because market is wrong? Or is revenue declining, management poor, or there's hidden debt? Always investigate WHY before concluding it's an opportunity."}
+  },
+  {
+    id:'i2', season:'i', num:3,
+    title:"Sector Analysis — Not All Stocks Are Equal",
+    sub:"Banking, IT, pharma, FMCG — read them differently",
+    tag:"SECTOR DEEP DIVE",
+    readTime:"15 min",
+    content:`
+      <h3>Why Sector Knowledge Matters</h3>
+      <p>A P/E of 30 is expensive for a steel company but cheap for a software company. A 2% net margin is terrible for pharma but normal for retail. Each sector has its own dynamics, cycles, and metrics.</p>
+      <h3>Banking & Financial Services</h3>
+      <table class="data-table">
+        <tr><th>METRIC</th><th>WHAT IT MEANS</th><th>HEALTHY RANGE</th></tr>
+        <tr><td>NIM (Net Interest Margin)</td><td>Spread between lending and deposit rates</td><td>3–4%+ for quality banks</td></tr>
+        <tr><td>NPA (Non-Performing Assets)</td><td>% of loans borrowers aren't repaying</td><td>Below 2% Gross NPA is good</td></tr>
+        <tr><td>CASA Ratio</td><td>% of deposits in Current/Savings accounts (cheap funds)</td><td>40%+ is excellent</td></tr>
+        <tr><td>ROA (Return on Assets)</td><td>Profit as % of total assets</td><td>1.5%+ is strong</td></tr>
+      </table>
+      <div class="callout blue">Banks are leveraged institutions — they use ₹8–10 of deposits/debt for every ₹1 of equity. Bad loans (NPAs) can wipe out equity very quickly. Rising NPAs = major red flag.</div>
+      <h3>IT / Technology</h3>
+      <p>• <strong>Revenue guidance:</strong> What management forecasts next quarter — very precise in IT sector.</p>
+      <p>• <strong>Attrition rate:</strong> % employees leaving. High attrition = rising costs, project disruptions.</p>
+      <p>• <strong>Deal wins (TCV):</strong> Total Contract Value of new deals. Leading indicator of future revenue.</p>
+      <p>• <strong>Dollar revenue growth:</strong> Since IT earns in USD, watch both rupee and dollar revenue.</p>
+      <h3>FMCG (Fast Moving Consumer Goods)</h3>
+      <p>• <strong>Volume growth vs. price growth:</strong> Sustainable growth = selling more units, not just raising prices.</p>
+      <p>• <strong>Rural vs. Urban split:</strong> Rural India is a massive growth market.</p>
+      <p>• <strong>Gross margin:</strong> FMCG typically 50–60%+. Watch for raw material cost squeezes.</p>
+      <h3>Pharmaceuticals</h3>
+      <p>• <strong>USFDA audits:</strong> A warning letter from US FDA can crash a pharma stock 20–40% in one day.</p>
+      <p>• <strong>ANDA filings:</strong> US FDA approvals for generic drugs drive future revenue.</p>
+      <p>• <strong>R&D as % of revenue:</strong> 8–12% shows investment in future pipeline.</p>
+      <h3>Cyclical vs. Defensive Sectors</h3>
+      <div class="highlight-box">
+        <div class="hl-label">📊 SECTOR CYCLICALITY</div>
+        <table class="data-table" style="margin:0;">
+          <tr><th>CYCLICAL (follow economy)</th><th>DEFENSIVE (stable in downturns)</th></tr>
+          <tr><td>Metals, Steel, Cement, Auto</td><td>FMCG, Pharma, Utilities</td></tr>
+          <tr><td>Real Estate, Capital Goods</td><td>Healthcare, Consumer Staples</td></tr>
+        </table>
+        <p style="font-size:12px;margin-top:10px;color:var(--text2);">In recessions: cyclicals fall hard, defensives hold. In booms: cyclicals soar, defensives lag.</p>
+      </div>`,
+    homework:["Find HDFC Bank's NPA ratio and NIM on their latest quarterly result — compare with a smaller private bank","Look at TCS's last 4 quarterly deal win announcements — is their deal pipeline growing or shrinking?","Compare HUL and Nestle India's P/E — which is more expensive, and can you justify why?"],
+    quiz:{q:"A pharma company receives a US FDA import alert on its main manufacturing plant. What most likely happens?",opts:["Stock rises — global scrutiny = good","Stock falls significantly — US revenue from that plant will be blocked","Nothing major — FDA alerts are routine","Only matters if 100% export-focused"],correct:1,explanation:"An FDA import alert blocks all products from that facility from entering the US. For India's pharma exporters, the US market often represents 30–50% of revenue. Such news routinely causes 20–40% single-day drops."}
+  },
+  {
+    id:'i3', season:'i', num:4,
+    title:"IPOs — How to Evaluate Them",
+    sub:"Should you apply? How to not get burnt",
+    tag:"IPO GUIDE",
+    readTime:"12 min",
+    content:`
+      <h3>What Actually Happens in an IPO</h3>
+      <p>When a private company wants public money, it lists on a stock exchange for the first time. The company (or existing shareholders) sell shares at a fixed price, and you apply to buy them.</p>
+      <div class="pullquote">The company hires investment bankers to "price" the IPO. These bankers are paid by the company — incentivised to price it as high as possible. IPO prices often favour the company, not the investor.</div>
+      <h3>OFS vs. Fresh Issue — Critical Distinction</h3>
+      <table class="data-table">
+        <tr><th>TYPE</th><th>WHAT IT MEANS</th><th>SIGNAL</th></tr>
+        <tr><td>Fresh Issue</td><td>New shares created, money goes to company for growth</td><td>Positive — company investing in expansion</td></tr>
+        <tr><td>OFS (Offer for Sale)</td><td>Existing shareholders selling their shares</td><td>Caution — insiders are cashing out. Why?</td></tr>
+      </table>
+      <div class="warn-box">⚠️ If an IPO is mostly OFS, the company itself gets no money — existing investors are just exiting at the IPO price. Ask: why are early investors desperate to sell now?</div>
+      <h3>The IPO Checklist</h3>
+      <p>✅ <strong>Revenue and profit growing</strong> — last 3 years, consistently.</p>
+      <p>✅ <strong>Reasonable valuation</strong> — compare P/E or EV/EBITDA to listed peers. 50% premium to peers needs a strong justification.</p>
+      <p>✅ <strong>Use of IPO proceeds</strong> — expansion/debt repayment = good. "General corporate purposes" = red flag.</p>
+      <p>✅ <strong>Promoter holding post-IPO</strong> — founders owning 50%+ shows skin in the game.</p>
+      <p>✅ <strong>Business model clarity</strong> — can you explain what they do and how they make money in 2 sentences?</p>
+      <p>✅ <strong>DRHP (Draft Red Herring Prospectus)</strong> — read the Risk Factors section. Legally mandated, completely honest about all risks.</p>
+      <h3>Listing Day Strategy</h3>
+      <p><strong>If listing pop is very high (30%+):</strong> Consider selling to lock in profit. IPO hype fades.</p>
+      <p><strong>If quality business for long term:</strong> Don't panic on a weak listing. Some great companies were weak on listing day but became multibaggers.</p>
+      <div class="callout green">Smartest IPO strategy: Apply for quality companies at fair valuations. For high-quality businesses, wait for the post-listing correction (prices often fall 10–20% in months after IPO hype) to buy at better prices.</div>`,
+    homework:["Find any recent Indian IPO on BSE — download its DRHP and read the first 5 Risk Factors","Check if the IPO was mostly Fresh Issue or OFS — what was the split?","Look at how that IPO's price has performed 6 months after listing vs. the IPO price"],
+    quiz:{q:"An IPO is 100% OFS. The company shows great revenue growth. Should you apply?",opts:["Yes — great revenue growth = great investment","Apply with caution — company gets no money and insiders are fully exiting","Never apply to OFS IPOs","OFS vs Fresh Issue makes no difference"],correct:1,explanation:"100% OFS means every rupee you invest goes to existing shareholders exiting, not the company. It's not necessarily bad, but you must ask: why are ALL insiders selling at this exact moment? It deserves deeper scrutiny."}
+  },
+  {
+    id:'i4', season:'i', num:5,
+    title:"Taxation on Investments in India",
+    sub:"STCG, LTCG, dividends — what you actually keep",
+    tag:"TAX & LAW",
+    readTime:"11 min",
+    content:`
+      <h3>Why Tax Knowledge Is Non-Negotiable</h3>
+      <p>A 20% return taxed heavily might be worse than 15% in a tax-efficient instrument. Taxes are the silent cost of investing — understanding them helps you keep more of what you earn.</p>
+      <h3>Capital Gains Tax — The Main Tax on Stocks</h3>
+      <table class="data-table">
+        <tr><th>HOLDING PERIOD</th><th>TYPE</th><th>TAX RATE (FY 2024-25)</th></tr>
+        <tr><td>Less than 12 months</td><td>STCG</td><td>20% flat</td></tr>
+        <tr><td>More than 12 months</td><td>LTCG</td><td>12.5% (above ₹1.25 lakh gain)</td></tr>
+        <tr><td>Equity MF &lt;12 months</td><td>STCG</td><td>20%</td></tr>
+        <tr><td>Equity MF &gt;12 months</td><td>LTCG</td><td>12.5% above ₹1.25L</td></tr>
+        <tr><td>Debt Mutual Funds</td><td>Added to income</td><td>As per your income tax slab</td></tr>
+      </table>
+      <div class="highlight-box">
+        <div class="hl-label">💡 THE ₹1.25 LAKH EXEMPTION</div>
+        <p style="font-size:14px;color:var(--text2);">Long-term capital gains up to ₹1.25 lakh per financial year are completely tax-free. Smart strategy: book profits each year to use this exemption, then re-invest.</p>
+      </div>
+      <h3>Dividend Tax</h3>
+      <p>Dividends are added to your total income and taxed at your income slab rate. If you're in the 30% bracket, you pay 30% on dividends. This is why growth-oriented companies (reinvesting profits) can be more tax-efficient for high-income investors.</p>
+      <h3>Tax-Loss Harvesting</h3>
+      <p>Sell losing stocks to book a loss. This loss offsets your gains, reducing your tax bill. Then repurchase the same stock after 1–2 days if you still believe in it.</p>
+      <div class="warn-box">⚠️ Short-term losses offset both ST and LT gains. Long-term losses can ONLY offset long-term gains. Keep this in mind when planning year-end tax strategy.</div>
+      <h3>Filing Returns</h3>
+      <p>If you have capital gains, file <strong>ITR-2</strong> (not ITR-1). Your broker provides a Tax P&L statement each year — download it, it shows all trades, gains, and losses pre-calculated.</p>`,
+    homework:["Calculate: you made ₹2 lakh LTCG this year. How much tax do you owe? (Remember the ₹1.25L exemption)","Log into your broker app and find the 'Tax P&L' section — explore what information it shows","If you have any loss-making stocks, check if booking them this year can offset any gains you've made"],
+    quiz:{q:"You bought a stock in January and sold it in November (11 months) at ₹50,000 profit. What tax applies?",opts:["LTCG at 12.5% — held almost a year","STCG at 20% — held less than 12 months","No tax — below ₹1.25 lakh","Tax at your income slab rate"],correct:1,explanation:"11 months < 12 months = STCG at flat 20%. The 12-month rule is strict. The ₹1.25L exemption only applies to LTCG, not STCG."}
+  },
+  {
+    id:'i5', season:'i', num:6,
+    title:"Macroeconomics & Markets",
+    sub:"RBI, inflation, GDP — and what they mean for your portfolio",
+    tag:"MACRO",
+    readTime:"14 min",
+    content:`
+      <h3>Why Macro Matters</h3>
+      <p>Even the best company's stock can fall if the broader economy turns bad. And a mediocre company in a booming sector can give great returns. Understanding macro forces helps you position your portfolio for the larger environment.</p>
+      <h3>Interest Rates — The Most Powerful Force in Markets</h3>
+      <p>The RBI sets the <strong>Repo Rate</strong> — the rate at which banks borrow from RBI. This one number ripples through everything:</p>
+      <div class="formula-box">RBI RAISES RATES → Bank loans costlier → Companies borrow less → Growth slows → Stock valuations compress<br><br>RBI CUTS RATES → Loans cheaper → More borrowing → Business expansion → Stocks re-rate higher</div>
+      <table class="data-table">
+        <tr><th>SECTOR</th><th>RATE HIKE IMPACT</th><th>RATE CUT IMPACT</th></tr>
+        <tr><td>Banking</td><td>NIM improves short-term, NPA risk rises</td><td>NIM compresses, loan growth accelerates</td></tr>
+        <tr><td>Real Estate</td><td>Negative — home loan EMIs rise</td><td>Very positive — EMIs fall, demand surges</td></tr>
+        <tr><td>Auto</td><td>Negative — vehicle loan EMIs rise</td><td>Positive — loans cheaper</td></tr>
+        <tr><td>IT/FMCG</td><td>Mild negative (valuation compression)</td><td>Mild positive</td></tr>
+      </table>
+      <h3>Inflation — The Double-Edged Sword</h3>
+      <p><strong>CPI:</strong> RBI's target is 4% (±2%). Above 6% consistently → RBI will hike rates → markets fall.</p>
+      <p>Moderate inflation (3–5%) is actually good for stocks — companies raise prices, revenues grow. High inflation (8%+) forces aggressive rate hikes that crush growth.</p>
+      <h3>FII vs. DII — Who's Moving the Market</h3>
+      <p><strong>FII (Foreign Institutional Investors):</strong> When they buy, markets rise. When they sell ("FII outflows"), markets fall — often due to global factors unrelated to India's economy.</p>
+      <p><strong>DII (Domestic Institutional Investors):</strong> Indian mutual funds, LIC etc. DIIs often BUY when FIIs sell, providing a cushion. The rise of Indian SIP culture has made DIIs increasingly powerful.</p>
+      <div class="highlight-box">
+        <div class="hl-label">📊 HOW TO TRACK THESE</div>
+        <p style="font-size:13px;color:var(--text2);">NSE and BSE publish daily FII/DII data. When FIIs sell ₹5,000–10,000 crore and DIIs absorb it — markets stay stable. When both sell together → significant correction. Data is free at nseindia.com.</p>
+      </div>
+      <h3>The US Market Connection</h3>
+      <p>When the US Fed hikes rates → USD strengthens → money flows from emerging markets → FII outflows from India → Indian markets fall. When US markets crash → Indian markets typically fall 50–70% as much.</p>`,
+    homework:["Look up 'RBI repo rate history 2019–2024' — map rate changes to Nifty 50 movements","Find today's CPI inflation for India — is it within RBI's 4% target?","Check NSE's FII/DII data for last week — were foreign investors buying or selling?"],
+    quiz:{q:"RBI unexpectedly cuts repo rate by 50 basis points. Which sector benefits MOST immediately?",opts:["IT companies — they export software","Real Estate & Auto — loan-driven sectors","FMCG — everyday consumer goods","Pharma — export-driven"],correct:1,explanation:"Real Estate and Auto are most directly sensitive to interest rates because purchases are largely financed through loans. When RBI cuts, EMIs fall, demand picks up almost immediately."}
+  },
+  {
+    id:'i6', season:'i', num:7,
+    title:"Building & Managing a Real Portfolio",
+    sub:"Position sizing, rebalancing & when to sell",
+    tag:"PORTFOLIO MGMT",
+    readTime:"13 min",
+    content:`
+      <h3>From Theory to an Actual Portfolio</h3>
+      <p>Knowing which stocks are good is only half the battle. How much you put in each, how you rebalance, and when you sell determines real-world results.</p>
+      <h3>Position Sizing — The Science of How Much</h3>
+      <div class="highlight-box">
+        <div class="hl-label">📐 A PRACTICAL FRAMEWORK</div>
+        <p style="font-size:14px;color:var(--text2);line-height:2.2;"><strong style="color:var(--text)">Core Holdings (60–70%):</strong> Index funds, large-cap quality stocks. Low risk, stable.<br><strong style="color:var(--text)">Satellite Holdings (20–30%):</strong> Mid-cap conviction bets, sector plays. Higher risk.<br><strong style="color:var(--text)">Speculative (max 10%):</strong> Small-caps, IPOs, high-growth bets. Prepared to lose all of this.</p>
+      </div>
+      <p>No single position should exceed 10% of your equity portfolio — even for your highest-conviction idea.</p>
+      <h3>When to Buy More</h3>
+      <p><strong>Averaging Down:</strong> Stock falls 20% — buy more only if the business thesis is unchanged and it fell due to market sentiment, not company fundamentals. Never average down on a falling knife (deteriorating business).</p>
+      <p><strong>Averaging Up:</strong> Add to winners. If a stock rose 30% and the thesis is getting stronger — adding is often smarter than adding to losers.</p>
+      <h3>The Hardest Question: When to Sell</h3>
+      <p>✅ <strong>Sell when the thesis breaks:</strong> You bought because market share would double — they're losing share. Thesis broken → sell, regardless of price.</p>
+      <p>✅ <strong>Sell when valuation is extreme:</strong> Stock you bought at 15x P/E now at 60x with no change in growth.</p>
+      <p>✅ <strong>Sell to rebalance:</strong> One position grew to 25% of portfolio. Trim back to 10–12%.</p>
+      <p>❌ <strong>Don't sell because it fell:</strong> Temporary price decline ≠ reason to sell if business is intact.</p>
+      <p>❌ <strong>Don't sell just because you have "profit":</strong> Let winners run.</p>
+      <div class="pullquote green">Write your sell criteria BEFORE you buy. "I will sell if NPA rises above 3%, or if management changes." Predetermined rules remove emotion from the most emotional decision.</div>
+      <h3>Portfolio Rebalancing</h3>
+      <p>Periodically reset your portfolio back to target allocations. If equities ran up to 80% vs. your 60% target — sell some equity, buy more debt/gold. Rebalance once a year, or when any class drifts >10% from target. This forces you to systematically sell high and buy low.</p>`,
+    homework:["List every investment you have (or plan to have) — what % of total is each?","Set a rule: write 3 conditions under which you would sell your top holding","Set up a portfolio tracker on INDMoney or Smallcase — link your Demat for automatic updates"],
+    quiz:{q:"You bought Zomato at ₹60. It's now ₹250 — 316% gain. It's now 22% of your portfolio. What should you consider?",opts:["Hold everything — it's a winner, let it ride","Sell all — lock in the profit","Trim to target allocation (8–10%), let the rest run","Buy more — clearly a great stock"],correct:2,explanation:"22% in one stock violates diversification principles, even if the stock is great. Trim back to target position size and reallocate. This is disciplined portfolio management — not market timing."}
+  },
+  {
+    id:'i7', season:'i', num:8,
+    title:"Reading Annual Reports Like a Detective",
+    sub:"What management isn't telling you — and how to find it",
+    tag:"ADVANCED RESEARCH",
+    readTime:"15 min",
+    content:`
+      <h3>The Annual Report — The Most Underused Free Resource</h3>
+      <p>Every listed company publishes a detailed Annual Report every year, available free on their website and BSE. Most retail investors never read it. This is your edge.</p>
+      <h3>Structure of an Annual Report</h3>
+      <p><strong>1. Chairman's / MD's Letter:</strong> Good managements address problems directly. Red flag: only celebrates achievements, no mention of challenges.</p>
+      <p><strong>2. Management Discussion & Analysis (MD&A):</strong> Most important section. Management's own view of the business, industry, opportunities, and risks. Compare to last year's MD&A — did they follow through on what they promised?</p>
+      <p><strong>3. Director's Report:</strong> Statutory disclosures, dividend, subsidiary performance, related-party transactions (watch these carefully).</p>
+      <p><strong>4. Corporate Governance Report:</strong> Board composition, independent directors, audit committee. Poor governance = red flag.</p>
+      <p><strong>5. Financial Statements & Notes:</strong> The actual numbers, with detailed notes explaining accounting policies, contingent liabilities, segment performance.</p>
+      <h3>The Notes to Financial Statements — Hidden Information</h3>
+      <div class="warn-box">⚠️ Watch for: <strong>Contingent Liabilities</strong> (lawsuits, guarantees), <strong>Related Party Transactions</strong> (buying from promoter-owned companies at unfair prices?), <strong>Accounting Policy Changes</strong> (mid-year changes can inflate profits).</div>
+      <h3>The Detective's Checklist</h3>
+      <p>📋 <strong>Promises vs. Delivery:</strong> What did management promise last year? Did they deliver? Consistently missing guidance = culture red flag.</p>
+      <p>📋 <strong>Cash vs. Profit:</strong> OCF should track net profit. Divergence = investigate.</p>
+      <p>📋 <strong>Receivables growth:</strong> Revenue grows 20% but receivables grow 50% = customers aren't paying. Eventually becomes bad debts.</p>
+      <p>📋 <strong>Promoter pledging:</strong> Promoters who've pledged large % of shares are in financial trouble. If stock falls, lenders sell pledged shares → stock crashes further → death spiral.</p>
+      <p>📋 <strong>Auditor's report:</strong> Any "qualifications" or "emphasis of matter" = RED FLAG. Auditors diplomatically saying something is wrong.</p>
+      <div class="pullquote blue">Peter Lynch's advice: "The person who turns over the most rocks wins." Reading annual reports is turning over rocks. Most investors are too lazy to do it. That's your opportunity.</div>`,
+    homework:["Download the latest Annual Report of any company you're interested in — read ONLY the MD&A section","Compare what management promised in last year's AR to what actually happened","Check the 'Related Party Transactions' note — does anything seem unusual in scale or nature?"],
+    quiz:{q:"You're reading an Annual Report and find the auditor added an 'Emphasis of Matter' paragraph. What should you do?",opts:["Ignore it — auditors always add boilerplate","Investigate seriously — auditors are flagging something unusual","The company is definitely committing fraud","Only matters for small-caps"],correct:1,explanation:"An 'Emphasis of Matter' is a formal, legally significant disclosure. Auditors are professionally conservative — if they're raising a flag, something genuinely needs your attention. It demands investigation before you hold or buy the stock."}
+  }
+];
+
+const ALL_CHAPTERS = [...BEGINNER, ...INTERMEDIATE];
+
+const EXAMPLES = [
+  "RBI cuts repo rate by 25 basis points to 6.25%, citing easing inflation pressures.",
+  "India's retail inflation rises to 6.8% in October, above RBI's 6% upper tolerance band.",
+  "Infosys Q3 results: Net profit up 40% YoY to ₹6,800 crore, revenue guidance raised to 5-7%.",
+  "US Federal Reserve signals two more rate hikes in 2025 to combat persistent inflation.",
+  "FIIs sell Indian equities worth ₹18,000 crore in November amid global risk-off sentiment.",
+  "Crude oil prices surge 12% to $95/barrel after OPEC+ announces production cuts.",
+  "Indian Rupee hits all-time low of 87.50 against US Dollar amid global dollar strength."
+];
+
+const GLOSSARY_DATA = [
+  {term:"Inflation",def:"The rate at which prices rise over time, eroding purchasing power. RBI targets 4% CPI in India.",eg:"₹100 in 2010 buys what ₹200 buys today — that's inflation at work"},
+  {term:"Compounding",def:"Earning returns on your returns. The longer you invest, the more powerful this becomes — exponentially.",eg:"₹5,000/month for 30 years at 12% = ₹1.76 crore (invested only ₹18 lakh)"},
+  {term:"Demat Account",def:"Digital locker for your shares. Just like a bank account holds money, a Demat account holds your stocks electronically.",eg:"When you buy TCS on Groww, the shares are credited to your Demat the next trading day"},
+  {term:"P/E Ratio",def:"Price-to-Earnings. Stock price divided by earnings per share. Tells you how much the market is paying for each rupee of profit.",eg:"P/E of 25 means investors are paying ₹25 for every ₹1 of annual earnings"},
+  {term:"EBITDA",def:"Earnings Before Interest, Tax, Depreciation & Amortization. Shows operating profitability before financing and accounting choices.",eg:"TCS EBITDA margin of 26% means ₹26 operating profit per ₹100 revenue"},
+  {term:"Free Cash Flow",def:"Operating cash flow minus capital expenditures. The actual surplus cash a business generates after maintaining/growing its assets.",eg:"Positive FCF means the company can pay dividends, buy back shares, or expand without borrowing"},
+  {term:"EV/EBITDA",def:"Enterprise Value divided by EBITDA. A valuation multiple that accounts for debt, making it better than P/E for comparing leveraged companies.",eg:"If EV/EBITDA is 20x and sector average is 15x, the stock trades at a premium"},
+  {term:"Repo Rate",def:"The rate at which RBI lends money to commercial banks. The primary monetary policy tool. Higher repo = tighter money = slower economy.",eg:"RBI cutting from 6.5% to 6.25% makes home loans cheaper by ~₹1,200/month on ₹50L loan"},
+  {term:"NPA",def:"Non-Performing Asset. A bank loan where borrower hasn't paid for 90+ days. High NPAs erode bank profitability and can threaten solvency.",eg:"If a bank has 5% Gross NPA, 5% of all loans are at risk of default"},
+  {term:"CASA Ratio",def:"Proportion of a bank's deposits in Current and Savings Accounts. These cost less (0–3% interest). Higher CASA = cheaper funding for the bank.",eg:"HDFC Bank's ~40% CASA ratio is a key competitive advantage"},
+  {term:"FII / FPI",def:"Foreign Institutional/Portfolio Investors. Global funds investing in Indian markets. Their flows heavily influence short-term market direction.",eg:"FII selling ₹10,000 crore in a week typically causes 1–2% Nifty decline"},
+  {term:"DII",def:"Domestic Institutional Investors — Indian mutual funds, insurance companies, pension funds. Increasingly absorb FII selling, providing market stability.",eg:"SIP inflows of ₹20,000+ crore/month make DIIs a powerful market stabilizer"},
+  {term:"Margin of Safety",def:"Buying a stock at a significant discount to your calculated intrinsic value. The buffer that protects against errors in analysis.",eg:"If intrinsic value = ₹1,000, buying at ₹700 gives 30% margin of safety"},
+  {term:"Promoter Pledging",def:"When promoters use their shares as collateral for personal/business loans. If the stock falls, lenders sell shares, causing further decline.",eg:"High promoter pledging (>50%) is a significant red flag for stock investors"},
+  {term:"DRHP",def:"Draft Red Herring Prospectus. The full disclosure document filed before an IPO. Contains complete business, financial, and risk information.",eg:"Reading the DRHP risk factors reveals business risks not covered in media coverage"},
+  {term:"PEG Ratio",def:"P/E divided by earnings growth rate. Adjusts P/E for growth. A P/E of 30 with 30% growth (PEG=1) is fairer than P/E of 15 with 5% growth (PEG=3).",eg:"PEG below 1 suggests the stock may be undervalued relative to its growth rate"},
+  {term:"STCG / LTCG",def:"Short/Long-Term Capital Gains tax. Stocks held <12 months: STCG at 20%. >12 months: LTCG at 12.5% above ₹1.25L exemption.",eg:"Selling after exactly 12 months saves 7.5% tax — sometimes worth waiting a few extra days"},
+  {term:"OFS (Offer for Sale)",def:"In an IPO, existing shareholders sell their shares. Company gets no proceeds — money goes directly to selling shareholders.",eg:"A 100% OFS IPO means all investors' money goes to exiting founders/PE funds, not the company"},
+  {term:"Support & Resistance",def:"Support = price floor where buyers step in repeatedly. Resistance = price ceiling where sellers appear repeatedly.",eg:"If Nifty bounces from 22,000 three times, that's a support level"},
+  {term:"SIP",def:"Systematic Investment Plan — investing a fixed amount monthly in a mutual fund. Builds the habit of investing and averages your cost automatically.",eg:"₹5,000/month SIP in Nifty 50 index fund is the most recommended starting point for beginners"}
+];
+
+// ════════════════════════════════════
+// STATE & PERSISTENCE
+// ════════════════════════════════════
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem('ss_complete_v1') || '{}'); } catch(e){}
+function save() { try { localStorage.setItem('ss_complete_v1', JSON.stringify(progress)); } catch(e){} }
+
+let currentSeason = 'b';
+let currentLesson = null;
+let lessonFromPage = 'chapters';
+
+function getUnlocked(season) {
+  const chs = season === 'b' ? BEGINNER : INTERMEDIATE;
+  const u = new Set([chs[0].id]);
+  for (let i = 0; i < chs.length - 1; i++) {
+    if (progress[chs[i].id]?.done) u.add(chs[i+1].id);
+  }
+  // Intermediate season 1 locked until ALL beginner chapters done
+  if (season === 'i') {
+    const allBDone = BEGINNER.every(c => progress[c.id]?.done);
+    if (!allBDone) return new Set();
+    // then normal unlock logic
+    const iu = new Set([INTERMEDIATE[0].id]);
+    for (let i = 0; i < INTERMEDIATE.length - 1; i++) {
+      if (progress[INTERMEDIATE[i].id]?.done) iu.add(INTERMEDIATE[i+1].id);
+    }
+    return iu;
+  }
+  return u;
+}
+
+// ════════════════════════════════════
+// SIDEBAR RENDER
+// ════════════════════════════════════
+function renderSidebar() {
+  const totalDone = ALL_CHAPTERS.filter(c => progress[c.id]?.done).length;
+  const pct = Math.round(totalDone / ALL_CHAPTERS.length * 100);
+  document.getElementById('spFill').style.width = pct + '%';
+  document.getElementById('spText').textContent = totalDone + '/16';
+
+  const nav = document.getElementById('sidebarNav');
+  let html = '';
+
+  // Season 1
+  html += `<div class="season-label">SEASON 1 · BEGINNER</div>`;
+  const bu = getUnlocked('b');
+  BEGINNER.forEach(ch => {
+    const done = !!progress[ch.id]?.done;
+    const unlocked = bu.has(ch.id);
+    const locked = !unlocked && !done;
+    html += `<div class="nav-item ${done?'done':''} ${unlocked&&!done?'unlocked':''} ${locked?'locked':''} ${currentLesson===ch.id?'active':''}"
+      onclick="${locked?'':'openLesson(\''+ch.id+'\',\'sidebar\')'}" >
+      <div class="nav-dot"></div>
+      <div class="nav-title">${ch.num}. ${ch.title}</div>
+      ${done ? '<span class="nav-check">✓</span>' : (locked ? '<span style="font-size:10px;color:var(--muted)">🔒</span>' : '')}
+    </div>`;
+  });
+
+  // Season 2
+  const allBDone = BEGINNER.every(c => progress[c.id]?.done);
+  html += `<div class="season-label">SEASON 2 · INTERMEDIATE</div>`;
+  const iu = getUnlocked('i');
+  INTERMEDIATE.forEach(ch => {
+    const done = !!progress[ch.id]?.done;
+    const unlocked = iu.has(ch.id);
+    const locked = !unlocked && !done;
+    html += `<div class="nav-item ${done?'done':''} ${unlocked&&!done?'unlocked':''} ${locked?'locked':''} ${currentLesson===ch.id?'active':''}"
+      onclick="${locked?'':'openLesson(\''+ch.id+'\',\'sidebar\')'}" >
+      <div class="nav-dot"></div>
+      <div class="nav-title">${ch.num}. ${ch.title}</div>
+      ${done ? '<span class="nav-check">✓</span>' : (locked ? '<span style="font-size:10px;color:var(--muted)">🔒</span>' : '')}
+    </div>`;
+  });
+
+  nav.innerHTML = html;
+}
+
+// ════════════════════════════════════
+// PAGE ROUTING
+// ════════════════════════════════════
+function hideAll() {
+  ['page-home','page-chapters','page-lesson','page-news','page-glossary'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+}
+
+function goPage(page, season) {
+  hideAll();
+  if (page === 'home') {
+    document.getElementById('page-home').style.display = 'block';
+    updateHomeDashboard();
+  } else if (page === 'beginner' || page === 'intermediate') {
+    currentSeason = page === 'beginner' ? 'b' : 'i';
+    document.getElementById('page-chapters').style.display = 'block';
+    renderChapterList();
+  } else if (page === 'news') {
+    document.getElementById('page-news').style.display = 'block';
+    document.getElementById('tool-news').classList.add('active');
+  } else if (page === 'glossary') {
+    document.getElementById('page-glossary').style.display = 'block';
+    document.getElementById('tool-glossary').classList.add('active');
+    renderGlossary();
+  }
+  renderSidebar();
+  // close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function updateHomeDashboard() {
+  const bDone = BEGINNER.filter(c => progress[c.id]?.done).length;
+  const iDone = INTERMEDIATE.filter(c => progress[c.id]?.done).length;
+  const total = bDone + iDone;
+  const pct = Math.round(total / 16 * 100);
+  document.getElementById('stat-done').textContent = total;
+  document.getElementById('stat-pct').textContent = pct + '%';
+  document.getElementById('prog-b').style.width = (bDone/8*100) + '%';
+  document.getElementById('prog-i').style.width = (iDone/8*100) + '%';
+  document.getElementById('prog-b-text').textContent = bDone + ' / 8 complete';
+  document.getElementById('prog-i-text').textContent = iDone + ' / 8 complete';
+}
+
+// ════════════════════════════════════
+// CHAPTER LIST
+// ════════════════════════════════════
+function renderChapterList() {
+  const isB = currentSeason === 'b';
+  const chs = isB ? BEGINNER : INTERMEDIATE;
+  const unlocked = getUnlocked(currentSeason);
+
+  document.getElementById('chapListEyebrow').className = 'page-eyebrow ' + currentSeason;
+  document.getElementById('chapListEyebrow').textContent = isB ? 'SEASON 1 · BEGINNER' : 'SEASON 2 · INTERMEDIATE';
+  document.getElementById('chapListTitle').textContent = isB ? 'Foundation & First Steps' : 'Analysis & Real Decisions';
+  document.getElementById('chapListSub').textContent = isB
+    ? 'Complete each chapter in sequence. Chapter 1 is unlocked — the rest unlock as you progress.'
+    : (BEGINNER.every(c => progress[c.id]?.done)
+        ? 'Season 1 complete! Dive into intermediate territory.'
+        : '⚠️ Complete all 8 Season 1 chapters first to unlock Season 2.');
+
+  document.getElementById('chapterList').innerHTML = chs.map(ch => {
+    const done = !!progress[ch.id]?.done;
+    const ul = unlocked.has(ch.id);
+    const locked = !ul && !done;
+    return `<div class="ch-row ${locked?'locked':''}" onclick="${locked?'':('openLesson(\''+ch.id+'\',\'chapters\')')}">
+      <div class="ch-num">${String(ch.num).padStart(2,'0')}</div>
+      <div class="ch-info">
+        <div class="ch-title">${ch.title}</div>
+        <div class="ch-sub">${ch.tag} · ${ch.readTime}</div>
+      </div>
+      <span class="ch-badge ${done?'done':ul?'go':'lock'}">${done?'✓ DONE':ul?'▶ START':'🔒 LOCKED'}</span>
     </div>`;
   }).join('');
 }
 
-// OVERVIEW CHART
-let ovChart;
-function initOverviewChart() {
-  const el = document.getElementById('overview-chart');
-  if (!el) return;
-  const labels = Array.from({length:30},(_,i)=>`${30-i}m`).reverse();
-  const spData = Array.from({length:30}, () => 5180 + Math.random()*80);
-  ovChart = new Chart(el, {
-    type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label:'S&P 500',
-        data: spData,
-        borderColor:'#00ff41',
-        backgroundColor:'rgba(0,255,65,0.05)',
-        borderWidth:1.5,
-        pointRadius:0,
-        fill:true,
-        tension:0.4
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
-        callbacks:{label:ctx=>`S&P: ${ctx.raw.toFixed(2)}`}}},
-      scales:{
-        x:{ticks:{color:'rgba(0,255,65,0.4)',font:{size:9},maxTicksLimit:6},grid:{color:'rgba(0,255,65,0.05)'}},
-        y:{ticks:{color:'rgba(0,255,65,0.4)',font:{size:9}},grid:{color:'rgba(0,255,65,0.05)'}}
-      }
+// ════════════════════════════════════
+// LESSON
+// ════════════════════════════════════
+function openLesson(chId, from) {
+  const ch = ALL_CHAPTERS.find(c => c.id === chId);
+  if (!ch) return;
+
+  currentLesson = chId;
+  lessonFromPage = from || 'chapters';
+
+  hideAll();
+  document.getElementById('page-lesson').style.display = 'block';
+
+  const isDone = !!progress[ch.id]?.done;
+  const hwChecked = progress[ch.id]?.hw || [];
+
+  document.getElementById('lessonCrumb').textContent =
+    (ch.season === 'b' ? 'Season 1 Beginner' : 'Season 2 Intermediate') + ' · Chapter ' + ch.num + ' of 8 · ' + ch.readTime;
+
+  // Main content
+  document.getElementById('lessonBody').innerHTML = `
+    <div class="lesson-tag ${ch.season}">${ch.tag}</div>
+    <div class="lesson-h1">${ch.title}</div>
+    <div class="lesson-content">${ch.content}</div>
+  `;
+
+  // Sidebar
+  const hwHtml = ch.homework.map((hw, i) => {
+    const checked = hwChecked.includes(i);
+    return `<div class="hw-item">
+      <div class="hw-check ${checked?'checked':''}" id="hw-${chId}-${i}" onclick="toggleHW('${chId}',${i})">${checked?'✓':''}</div>
+      <div class="hw-text">${hw}</div>
+    </div>`;
+  }).join('');
+
+  const qAnswered = progress[ch.id]?.quizAnswer !== undefined;
+  const qOptsHtml = ch.quiz.opts.map((o,i) => {
+    let cls = '';
+    if (qAnswered) {
+      if (i === ch.quiz.correct) cls = 'correct';
+      else if (i === progress[ch.id].quizAnswer) cls = 'wrong';
     }
-  });
-}
+    return `<button class="quiz-w-opt ${cls}" id="qo-${chId}-${i}" onclick="answerQuiz('${chId}',${i})" ${qAnswered?'disabled':''}>${o}</button>`;
+  }).join('');
 
-// ─── TICKER ──────────────────────────────────────────────────────────────────
-function renderTicker() {
-  const all = [...liveStocks.slice(0,5), ...liveCrypto.slice(0,4), ...liveForex.slice(0,4)];
-  document.getElementById('ticker').innerHTML = all.map(item => {
-    const pos = item.chg >= 0;
-    return `<span class="ticker-item">
-      <span class="sym">${item.sym}</span>
-      <span class="price">${fmtPrice(item.price,item.sym)}</span>
-      <span class="${pos?'up':'down'}">${pos?'▲':'▼'}${Math.abs(item.chg).toFixed(2)}%</span>
-    </span>`;
-  }).join('<span style="color:rgba(0,255,65,0.3);margin:0 10px">◆</span>');
-}
+  let fbHtml = '';
+  if (qAnswered) {
+    const ok = progress[ch.id].quizAnswer === ch.quiz.correct;
+    fbHtml = `<div class="quiz-w-fb show ${ok?'ok':'no'}">${ok?'✓ Correct! ':'✗ Not quite. '}${ch.quiz.explanation}</div>`;
+  } else {
+    fbHtml = `<div class="quiz-w-fb" id="qf-${chId}"></div>`;
+  }
 
-// ─── NEWS DATA + AI ──────────────────────────────────────────────────────────
-let allNews = [];
-let currentFilter = 'all';
-
-const NEWS_HEADLINES = [
-  {headline:"Federal Reserve signals cautious approach to rate cuts amid persistent inflation data", source:"Reuters", time:"2m ago", cat:"economy", summary:"Fed officials maintain hawkish tone as CPI figures remain above 2% target."},
-  {headline:"NVIDIA surges 4% as AI chip demand continues to outpace production capacity", source:"Bloomberg", time:"5m ago", cat:"market", summary:"Data center revenue projected to reach $40B this quarter alone."},
-  {headline:"China's manufacturing PMI expands for second consecutive month, boosting Asian markets", source:"AP News", time:"12m ago", cat:"economy", summary:"Stimulus measures appear to be taking effect in world's second-largest economy."},
-  {headline:"European Central Bank holds rates steady, hints at June cut if inflation cooperates", source:"BBC", time:"18m ago", cat:"economy", summary:"ECB President signals data-dependent approach as eurozone growth stagnates."},
-  {headline:"Bitcoin ETF inflows hit record $1.2B in single day as institutional adoption accelerates", source:"Financial Times", time:"24m ago", cat:"market", summary:"BlackRock and Fidelity funds attract record capital amid renewed crypto optimism."},
-  {headline:"OpenAI announces GPT-5 with multimodal capabilities surpassing human benchmarks", source:"The Guardian", time:"31m ago", cat:"tech", summary:"New model demonstrates emergent reasoning capabilities across science and math domains."},
-  {headline:"Geopolitical tensions in Middle East push oil prices above $80 per barrel", source:"Reuters", time:"35m ago", cat:"world", summary:"Supply disruption fears intensify as regional conflicts show no signs of resolution."},
-  {headline:"UK economy unexpectedly enters technical recession in Q4 2024 data revision", source:"BBC", time:"42m ago", cat:"economy", summary:"GDP contracted 0.3% for second consecutive quarter, triggering political pressure on government."},
-  {headline:"Quantum computing breakthrough: IBM demonstrates 1000-qubit error correction", source:"AP News", time:"58m ago", cat:"tech", summary:"Milestone could accelerate timeline for cryptographically relevant quantum computers."},
-  {headline:"G7 nations agree on framework for AI regulation and cross-border data governance", source:"Financial Times", time:"1h ago", cat:"world", summary:"Historic agreement sets minimum standards for frontier AI model safety evaluations."},
-  {headline:"Tesla Cybertruck deliveries halted due to brake pedal defect affecting 3,800 vehicles", source:"Reuters", time:"1h ago", cat:"market", summary:"Company issues voluntary recall, shares dip 2% in premarket trading."},
-  {headline:"Meta's AR glasses exceed 10 million units sold in first quarter of availability", source:"Bloomberg", time:"2h ago", cat:"tech", summary:"Strong consumer demand signals next computing platform shift may be imminent."},
-];
-
-function renderNewsItem(item) {
-  const tagMap = {economy:'tag-economy',tech:'tag-tech',world:'tag-world',market:'tag-market'};
-  return `<div class="news-item" data-cat="${item.cat}">
-    <div class="news-meta">
-      <span class="news-source">[${item.source.toUpperCase()}]</span>
-      <span>${item.time}</span>
+  document.getElementById('lessonSidebar').innerHTML = `
+    <div class="sidebar-widget">
+      <div class="widget-title">🎯 ACTION ITEMS</div>
+      ${hwHtml}
     </div>
-    <div class="news-headline">${item.headline}</div>
-    <div class="news-summary">${item.summary}</div>
-    <span class="news-tag ${tagMap[item.cat]||'tag-economy'}">${item.cat.toUpperCase()}</span>
-  </div>`;
+    <div class="quiz-widget">
+      <div class="quiz-w-label">⚡ QUICK CHECK</div>
+      <div class="quiz-w-q">${ch.quiz.q}</div>
+      ${qOptsHtml}
+      ${fbHtml}
+    </div>
+    <div class="celebrate-line" id="cel-${chId}">🎉 Chapter complete! Next unlocked.</div>
+    <button class="done-btn" id="db-${chId}" onclick="markDone('${chId}')" ${isDone?'disabled':''}>
+      ${isDone ? '✓ COMPLETED' : 'MARK AS COMPLETE →'}
+    </button>
+  `;
+
+  renderSidebar();
 }
 
-function renderNews(feedId, filter='all') {
-  const el = document.getElementById(feedId);
-  if (!el) return;
-  const filtered = filter === 'all' ? NEWS_HEADLINES : NEWS_HEADLINES.filter(n => n.cat === filter);
-  el.innerHTML = filtered.map(renderNewsItem).join('');
-  if (document.getElementById('news-count')) document.getElementById('news-count').textContent = NEWS_HEADLINES.length + ' ITEMS';
-  if (document.getElementById('news-tab-count')) document.getElementById('news-tab-count').textContent = filtered.length + ' ITEMS';
-}
-
-function filterNews(cat) {
-  currentFilter = cat;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
-  document.querySelector(`[data-cat="${cat}"]`)?.classList.add('active-filter');
-  renderNews('main-news-feed', cat);
-}
-
-// ─── AI BRIEF (CLAUDE API) ────────────────────────────────────────────────────
-async function fetchAIBrief() {
-  const el = document.getElementById('ai-brief');
-  const context = `Current market snapshot:
-- S&P 500: +0.74%, NASDAQ: +1.12%, BTC: +1.83%, Gold: +0.32%, Oil: -1.21%
-- Top mover: NVDA +3.21%, AMD +4.53%, PLTR +6.24%
-- Headlines: Fed signals caution on rate cuts; Bitcoin ETF record inflows; China PMI expansion; UK enters recession; OpenAI GPT-5 announcement.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are a terse, incisive financial intelligence analyst writing for a professional trading terminal. 
-Write in a direct, data-driven style with no fluff. 
-Format with brief section headers using ▶ symbol. 
-Use terminal-style brevity. Max 200 words total.
-Sections: MARKET PULSE | KEY RISKS | WATCH LIST`,
-        messages:[{role:'user',content:`Give me a rapid intel brief based on this data:\n${context}`}]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || 'SIGNAL LOST: No response from intel core.';
-    el.innerHTML = `<div style="font-size:12px;line-height:1.8;color:rgba(0,255,65,0.85)">${
-      text.replace(/▶\s*/g,'<br><span style="color:var(--cyan)">▶ </span>')
-         .replace(/\*\*(.*?)\*\*/g,'<span style="color:#fff;text-shadow:0 0 8px #fff">$1</span>')
-         .replace(/\n/g,'<br>')
-    }<span class="terminal-cursor"></span></div>`;
-  } catch(e) {
-    el.innerHTML = `<div style="font-size:11px;color:rgba(0,255,65,0.6)">
-      <div style="color:var(--amber)">▶ MARKET PULSE</div>
-      Equity markets showing broad strength led by tech. AI-related names outperforming. Rate-sensitive sectors under pressure as Fed signals delayed cuts.
-      <br><br><div style="color:var(--amber)">▶ KEY RISKS</div>
-      Geopolitical escalation in MENA threatening energy supply chain. UK recession data adding to global growth concerns. Crypto volatility elevated near ATH.
-      <br><br><div style="color:var(--amber)">▶ WATCH LIST</div>
-      NVDA (momentum), BTC (breakout risk), EUR/USD (ECB divergence), WTI (supply premium)<span class="terminal-cursor"></span>
-    </div>`;
+function lessonBack() {
+  currentLesson = null;
+  if (lessonFromPage === 'sidebar') {
+    // go to home
+    goPage('home');
+  } else {
+    goPage(currentSeason === 'b' ? 'beginner' : 'intermediate');
   }
 }
 
-async function fetchAIAnalysis() {
-  const el = document.getElementById('ai-analysis');
-  if (!el) return;
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: 'You are a geopolitical and macro analyst. Respond with extremely concise 3-sentence analysis. Terminal style. No markdown.',
-        messages:[{role:'user',content:'Analyze the macro implications of: Fed holding rates, Bitcoin ETF record inflows, UK recession, China PMI recovery, OpenAI GPT-5 release, oil price spike.'}]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    el.innerHTML = `<div style="font-size:11px;line-height:1.8;color:rgba(0,255,65,0.8)">${text.replace(/\n/g,'<br>')}<span class="terminal-cursor"></span></div>`;
-  } catch(e) {
-    el.innerHTML = `<div style="font-size:11px;line-height:1.8;color:rgba(0,255,65,0.8)">
-      Macro divergence accelerating: US exceptionalism holds as Fed delays while UK and EU weaken. AI productivity wave beginning to show in earnings but creating new geopolitical fracture lines around chip access. Risk-on sentiment likely near-term, but geopolitical tail risks remain elevated.<span class="terminal-cursor"></span>
-    </div>`;
-  }
+function toggleHW(chId, i) {
+  if (!progress[chId]) progress[chId] = {};
+  if (!progress[chId].hw) progress[chId].hw = [];
+  const arr = progress[chId].hw;
+  const idx = arr.indexOf(i);
+  if (idx >= 0) arr.splice(idx,1); else arr.push(i);
+  save();
+  const el = document.getElementById(`hw-${chId}-${i}`);
+  if (el) { const c=arr.includes(i); el.className='hw-check'+(c?' checked':''); el.textContent=c?'✓':''; }
 }
 
-// ─── TABS ────────────────────────────────────────────────────────────────────
-function switchTab(tab) {
-  document.querySelectorAll('.main').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-  document.getElementById(`${tab}-view`).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(btn => {
-    if (btn.textContent.toLowerCase().includes(tab === 'overview' ? 'overview' : tab === 'markets' ? 'market' : 'intel')) {
-      btn.classList.add('active');
-    }
+function answerQuiz(chId, optIdx) {
+  const ch = ALL_CHAPTERS.find(c => c.id === chId);
+  if (!ch || progress[chId]?.quizAnswer !== undefined) return;
+  if (!progress[chId]) progress[chId] = {};
+  progress[chId].quizAnswer = optIdx;
+  save();
+  const ok = optIdx === ch.quiz.correct;
+  ch.quiz.opts.forEach((_,i) => {
+    const el = document.getElementById(`qo-${chId}-${i}`);
+    if (!el) return;
+    el.disabled = true;
+    if (i === ch.quiz.correct) el.classList.add('correct');
+    else if (i === optIdx) el.classList.add('wrong');
   });
-  if (tab === 'markets') { renderMarkets(); }
-  if (tab === 'news') { renderNews('main-news-feed', currentFilter); fetchAIAnalysis(); }
+  const fb = document.getElementById(`qf-${chId}`);
+  if (fb) { fb.className=`quiz-w-fb show ${ok?'ok':'no'}`; fb.textContent=(ok?'✓ Correct! ':'✗ Not quite. ')+ch.quiz.explanation; }
 }
 
-// ─── RENDER ALL MARKETS ───────────────────────────────────────────────────────
-function renderMarkets() {
-  renderIndices();
-  renderTable('stocks-table', liveStocks, true);
-  renderTable('crypto-table', liveCrypto, true);
-  renderTable('forex-table', liveForex, false);
+function markDone(chId) {
+  if (!progress[chId]) progress[chId] = {};
+  progress[chId].done = true;
+  save();
+  const btn = document.getElementById(`db-${chId}`);
+  if (btn) { btn.disabled=true; btn.textContent='✓ COMPLETED'; }
+  const cel = document.getElementById(`cel-${chId}`);
+  if (cel) cel.style.display='block';
+  renderSidebar();
+  updateHomeDashboard();
 }
 
-// ─── LIVE UPDATE ─────────────────────────────────────────────────────────────
-function liveUpdate() {
-  nudge(liveStocks); nudge(liveCrypto); nudge(liveForex); nudge(liveIndices);
-  renderTicker();
-  if (document.getElementById('markets-view').classList.contains('active')) renderMarkets();
-  // Update overview chart
-  if (ovChart) {
-    const lastVal = ovChart.data.datasets[0].data;
-    lastVal.push(lastVal[lastVal.length-1] * (1 + (Math.random()-0.498)*0.001));
-    lastVal.shift();
-    ovChart.update('none');
+// ════════════════════════════════════
+// NEWS LAB
+// ════════════════════════════════════
+function fillEx(i) { document.getElementById('newsInput').value = EXAMPLES[i]; }
+
+async function analyzeNews() {
+  const news = document.getElementById('newsInput').value.trim();
+  if (!news) return;
+  const btn = document.getElementById('analyzeBtn');
+  const loading = document.getElementById('loadingWrap');
+  const out = document.getElementById('analysisOut');
+  btn.disabled = true;
+  loading.classList.add('show');
+  out.classList.remove('show');
+  out.innerHTML = '';
+
+  const prompt = `You are an expert Indian stock market analyst and financial educator. A beginner investor has pasted this news:
+
+"${news}"
+
+Analyze this news for them. Respond ONLY in valid JSON with this exact structure:
+{
+  "verdict": "BULLISH" or "BEARISH" or "NEUTRAL",
+  "summary": "One sentence plain-English summary",
+  "what_happened": "2-3 sentences explaining the event simply for a beginner",
+  "market_impact": "2-3 sentences on how this affects Indian stock markets",
+  "sectors_affected": [{"sector": "name", "impact": "Positive or Negative or Mixed", "reason": "short reason"}],
+  "investor_action": "What should a long-term retail investor do? Be specific and practical.",
+  "key_terms": [{"term": "term name", "definition": "simple definition"}],
+  "important_context": "Any important nuance, historical context, or warning a beginner should know"
+}
+Keep explanations simple, practical, and India-focused. Maximum 2 sectors_affected and 2 key_terms. Return only JSON, no markdown.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i=>i.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    const p = JSON.parse(clean);
+
+    const vc = p.verdict==='BULLISH'?'bull':p.verdict==='BEARISH'?'bear':'neutral';
+    const ve = p.verdict==='BULLISH'?'🐂':p.verdict==='BEARISH'?'🐻':'⚖️';
+
+    const secHtml = (p.sectors_affected||[]).map(s=>{
+      const col = s.impact==='Positive'?'var(--success)':s.impact==='Negative'?'var(--danger)':'var(--gold)';
+      return `<div class="result-card">
+        <div class="rc-label">SECTOR IMPACT</div>
+        <div class="rc-content"><strong>${s.sector}</strong> — <span style="color:${col};font-weight:700;">${s.impact}</span><br>${s.reason}</div>
+      </div>`;
+    }).join('');
+
+    const termHtml = (p.key_terms||[]).map(t=>
+      `<div class="result-card">
+        <div class="rc-label">KEY TERM</div>
+        <div class="rc-content"><strong>${t.term}:</strong> ${t.definition}</div>
+      </div>`
+    ).join('');
+
+    out.innerHTML = `
+      <div class="verdict-row">
+        <span class="verdict-pill ${vc}">${ve} ${p.verdict}</span>
+        <span class="verdict-note">for long-term equity investors</span>
+      </div>
+      <div class="full-result">
+        <h4>📋 What Happened</h4><p>${p.what_happened}</p>
+        <h4>📈 Market Impact</h4><p>${p.market_impact}</p>
+      </div>
+      <div class="result-grid" style="margin-top:14px;">${secHtml}${termHtml}</div>
+      <div class="full-result" style="margin-top:14px;">
+        <h4>✅ What You Should Do</h4><p>${p.investor_action}</p>
+        <h4>💡 Important Context</h4><p>${p.important_context}</p>
+      </div>
+    `;
+    out.classList.add('show');
+  } catch(e) {
+    out.innerHTML = `<div class="warn-box">Could not analyse the news. Please check your connection and try again.</div>`;
+    out.classList.add('show');
+  } finally {
+    btn.disabled=false;
+    loading.classList.remove('show');
   }
 }
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
-renderTicker();
-renderOverviewCards();
-renderSectorBars();
-renderNews('overview-headlines');
-fetchAIBrief();
-setTimeout(initOverviewChart, 100);
-setInterval(liveUpdate, 2000);
+// ════════════════════════════════════
+// GLOSSARY
+// ════════════════════════════════════
+function renderGlossary() {
+  document.getElementById('glossGrid').innerHTML = GLOSSARY_DATA.map(g=>`
+    <div class="gloss-card">
+      <div class="gloss-term">${g.term}</div>
+      <div class="gloss-def">${g.def}</div>
+      <div class="gloss-eg">e.g. ${g.eg}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════
+// MOBILE SIDEBAR
+// ════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+renderSidebar();
+updateHomeDashboard();
+document.getElementById('page-home').style.display = 'block';
 </script>
 </body>
 </html>
